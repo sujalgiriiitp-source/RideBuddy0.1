@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "RideBuddy",
+    "slug": "ridebuddy",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sujal55.dev.ridebuddy"
+    },
+    "android": {
+      "package": "com.sujal55.dev.ridebuddy"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
