@@ -3,9 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
-import ScreenContainer from '../components/ScreenContainer';
-import InputField from '../components/InputField';
-import CustomButton from '../components/CustomButton';
+import ScreenTransition from '../components/ScreenTransition';
+import PremiumInput from '../components/PremiumInput';
+import PremiumButton from '../components/PremiumButton';
+import PremiumCard from '../components/PremiumCard';
 import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
@@ -54,21 +55,20 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <ScreenContainer>
-      <AnimatedReveal>
-        <View style={styles.container}>
-          <View style={styles.brandRow}>
-            <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
-              <Ionicons name="car-sport" size={20} color="#fff" />
-            </LinearGradient>
-            <View>
-              <Text style={styles.title}>RideBuddy</Text>
-              <Text style={styles.subtitle}>Welcome back. Find your next ride in seconds.</Text>
-            </View>
+    <ScreenTransition variant="fadeSlide">
+      <View style={styles.container}>
+        <View style={styles.brandRow}>
+          <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+            <Ionicons name="car-sport" size={20} color={colors.white} />
+          </LinearGradient>
+          <View>
+            <Text style={styles.title}>RideBuddy</Text>
+            <Text style={styles.subtitle}>Welcome back. Find your next ride in seconds.</Text>
           </View>
+        </View>
 
-          <View style={styles.card}>
-          <InputField
+        <PremiumCard glass elevation="md">
+          <PremiumInput
             label="Email"
             value={email}
             onChangeText={(value) => {
@@ -82,7 +82,7 @@ const LoginScreen = ({ navigation }) => {
             icon="mail-outline"
             error={errors.email}
           />
-          <InputField
+          <PremiumInput
             label="Password"
             value={password}
             onChangeText={(value) => {
@@ -96,12 +96,25 @@ const LoginScreen = ({ navigation }) => {
             icon="lock-closed-outline"
             error={errors.password}
           />
-          <CustomButton title="Login" onPress={handleLogin} loading={loading} icon="log-in-outline" disabled={loading || !email.trim() || !password} />
-          <CustomButton title="Create Account" onPress={() => navigation.navigate('Signup')} variant="secondary" icon="person-add-outline" style={styles.secondaryCta} />
-          </View>
-        </View>
-      </AnimatedReveal>
-    </ScreenContainer>
+          <PremiumButton
+            title="Login"
+            onPress={handleLogin}
+            loading={loading}
+            icon="log-in-outline"
+            disabled={loading || !email.trim() || !password}
+            fullWidth
+          />
+          <PremiumButton
+            title="Create Account"
+            onPress={() => navigation.navigate('Signup')}
+            variant="secondary"
+            icon="person-add-outline"
+            style={styles.secondaryCta}
+            fullWidth
+          />
+        </PremiumCard>
+      </View>
+    </ScreenTransition>
   );
 };
 
@@ -109,42 +122,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 20
+    paddingVertical: tokens.spacing['2xl']
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18,
-    gap: 12
+    marginBottom: tokens.spacing.xl,
+    gap: tokens.spacing.lg
   },
   logoBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: tokens.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    ...tokens.shadows.strong
+    ...tokens.shadows.lg
   },
   title: {
-    fontSize: tokens.typography.hero,
-    fontWeight: '800',
-    color: colors.text
+    ...tokens.typography.h2,
+    color: colors.text,
+    marginBottom: tokens.spacing.sm
   },
   subtitle: {
-    marginTop: 8,
-    color: colors.mutedText,
-    marginBottom: 16
-  },
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: '#D9E4FA',
-    padding: 18,
-    ...tokens.shadows.soft
+    ...tokens.typography.body,
+    color: colors.textSecondary,
+    maxWidth: 280
   },
   secondaryCta: {
-    marginTop: 8
+    marginTop: tokens.spacing.md
   }
 });
 

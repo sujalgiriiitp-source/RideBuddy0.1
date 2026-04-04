@@ -3,9 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
-import ScreenContainer from '../components/ScreenContainer';
-import InputField from '../components/InputField';
-import CustomButton from '../components/CustomButton';
+import ScreenTransition from '../components/ScreenTransition';
+import PremiumInput from '../components/PremiumInput';
+import PremiumButton from '../components/PremiumButton';
+import PremiumCard from '../components/PremiumCard';
 import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
@@ -77,12 +78,11 @@ const SignupScreen = () => {
   };
 
   return (
-    <ScreenContainer>
-      <AnimatedReveal>
-      <View style={styles.heroCard}>
+    <ScreenTransition variant="fadeSlide">
+      <View style={styles.container}>
         <View style={styles.brandRow}>
           <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
-            <Ionicons name="car-sport" size={20} color="#FFFFFF" />
+            <Ionicons name="car-sport" size={20} color={colors.white} />
           </LinearGradient>
           <View>
             <Text style={styles.brandTitle}>RideBuddy</Text>
@@ -90,11 +90,13 @@ const SignupScreen = () => {
           </View>
         </View>
 
-        <Text style={styles.title}>Get moving in minutes</Text>
-        <Text style={styles.subtitle}>Fast, safe and affordable campus rides.</Text>
+        <View style={styles.heroSection}>
+          <Text style={styles.title}>Get moving in minutes</Text>
+          <Text style={styles.subtitle}>Fast, safe and affordable campus rides.</Text>
+        </View>
 
-        <View style={styles.formCard}>
-          <InputField
+        <PremiumCard glass elevation="md">
+          <PremiumInput
             label="Full name"
             value={form.name}
             onChangeText={(value) => setField('name', value)}
@@ -103,7 +105,7 @@ const SignupScreen = () => {
             icon="person-outline"
             error={errors.name}
           />
-          <InputField
+          <PremiumInput
             label="Email"
             value={form.email}
             onChangeText={(value) => setField('email', value)}
@@ -112,7 +114,7 @@ const SignupScreen = () => {
             icon="mail-outline"
             error={errors.email}
           />
-          <InputField
+          <PremiumInput
             label="Password"
             value={form.password}
             onChangeText={(value) => setField('password', value)}
@@ -121,75 +123,73 @@ const SignupScreen = () => {
             icon="lock-closed-outline"
             error={errors.password}
           />
-          <InputField label="Phone (optional)" value={form.phone} onChangeText={(value) => setField('phone', value)} placeholder="98XXXXXXXX" keyboardType="phone-pad" icon="call-outline" />
-          <CustomButton
+          <PremiumInput
+            label="Phone (optional)"
+            value={form.phone}
+            onChangeText={(value) => setField('phone', value)}
+            placeholder="98XXXXXXXX"
+            keyboardType="phone-pad"
+            icon="call-outline"
+          />
+          <PremiumButton
             title="Create Account"
             onPress={handleSignup}
             loading={loading}
             icon="sparkles-outline"
             disabled={loading || !form.name.trim() || !form.email.trim() || !form.password}
+            fullWidth
             style={styles.cta}
           />
-        </View>
+        </PremiumCard>
       </View>
-      </AnimatedReveal>
-    </ScreenContainer>
+    </ScreenTransition>
   );
 };
 
 const styles = StyleSheet.create({
-  heroCard: {
-    marginTop: 8,
-    marginBottom: 24
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: tokens.spacing.xl
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18
+    marginBottom: tokens.spacing.xl,
+    gap: tokens.spacing.lg
   },
   logoBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: tokens.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    ...tokens.shadows.strong
+    ...tokens.shadows.lg
   },
   brandTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    ...tokens.typography.h5,
     color: colors.text
   },
   brandSub: {
-    marginTop: 2,
-    color: colors.mutedText,
-    fontSize: 12,
-    fontWeight: '600'
+    marginTop: tokens.spacing.xs,
+    color: colors.textTertiary,
+    ...tokens.typography.caption
+  },
+  heroSection: {
+    marginBottom: tokens.spacing['2xl']
   },
   title: {
-    fontSize: tokens.typography.hero,
-    fontWeight: '800',
+    ...tokens.typography.h2,
     color: colors.text,
-    letterSpacing: -0.3
+    marginBottom: tokens.spacing.md
   },
   subtitle: {
-    marginTop: 8,
-    color: colors.mutedText,
-    marginBottom: 20,
-    fontSize: 15,
-    lineHeight: 21
-  },
-  formCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: '#D9E4FA',
-    padding: 18,
-    ...tokens.shadows.soft
+    ...tokens.typography.body,
+    color: colors.textSecondary,
+    lineHeight: 24
   },
   cta: {
-    marginTop: 4
+    marginTop: tokens.spacing.md
   }
 });
 
