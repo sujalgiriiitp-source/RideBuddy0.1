@@ -22,11 +22,7 @@ app.use(morgan('dev'));
 app.use('/api', apiLimiter);
 
 app.get('/api', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'RideBuddy API',
-    data: null
-  });
+  res.status(200).json({ success: true });
 });
 
 app.get('/api/health', (req, res) => {
@@ -39,14 +35,10 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    if (!env.jwtSecret) {
-      throw new Error('JWT_SECRET is missing in environment variables');
-    }
-
     await connectDatabase();
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server running on port ${PORT}`);
     });
   } catch (error) {

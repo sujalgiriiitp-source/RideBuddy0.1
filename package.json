@@ -3,7 +3,10 @@
   "private": true,
   "scripts": {
     "start": "node server/index.js",
-    "dev": "npm --prefix server run dev"
+    "dev": "npm --prefix server run dev",
+    "postinstall": "npm --prefix server install --omit=dev"
   },
-  "devDependencies": {}
+  "engines": {
+    "node": ">=18"
+  }
 }
