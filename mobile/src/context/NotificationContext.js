@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import NotificationServiceMobile from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
@@ -25,6 +24,10 @@ export const NotificationProvider = ({ children, navigation }) => {
   const [hasPermission, setHasPermission] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [notification, setNotification] = useState(null);
+
+  useEffect(() => {
+    console.log('[NotificationContext] init', { platform: Platform.OS, hasUser: Boolean(user) });
+  }, [user]);
 
   // Register for push notifications when user logs in
   useEffect(() => {

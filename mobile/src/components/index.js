@@ -18,10 +18,8 @@ export { default as ParallaxHeader, FloatingActionButton } from './ParallaxHeade
 export { default as NotificationBadge } from './NotificationBadge';
 export { default as NotificationToast } from './NotificationToast';
 
-// Map components
-export { default as MapView } from './MapView';
+// Map components (import directly in map-focused screens to avoid web bundle side-effects)
 export { default as PlaceAutocomplete } from './PlaceAutocomplete';
-export { default as RouteMap } from './RouteMap';
 export { default as DistanceTimeDisplay } from './DistanceTimeDisplay';
 
 // Existing premium components

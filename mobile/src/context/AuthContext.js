@@ -13,13 +13,16 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const bootstrap = async () => {
+      console.log('[AuthContext] bootstrap start');
       const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        console.log('[AuthContext] restored persisted session');
       }
       setIsInitializing(false);
+      console.log('[AuthContext] bootstrap complete');
     };
 
     bootstrap();

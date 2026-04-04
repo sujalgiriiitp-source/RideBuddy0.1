@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
-import { colors } from '../theme/colors';
-import MapView from './MapView';
+import colors from '../theme/colors';
 
 /**
  * RouteMap Component
@@ -131,7 +130,7 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary
+    backgroundColor: colors.backgroundAlt
   },
   sourceMarker: {
     width: 32,
@@ -169,7 +168,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.error
+    backgroundColor: colors.danger
   }
 });
 

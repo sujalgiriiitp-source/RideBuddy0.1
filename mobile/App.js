@@ -1,5 +1,5 @@
-import React from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/context/AuthContext';
@@ -30,6 +30,7 @@ class AppErrorBoundary extends React.Component {
             <Text style={styles.title}>RideBuddy</Text>
             <Text style={styles.subtitle}>App failed to render.</Text>
             <Text style={styles.meta}>{this.state.message}</Text>
+            <Text style={styles.hint}>Please refresh the page or reopen the app.</Text>
           </View>
         </SafeAreaView>
       );
@@ -39,19 +40,11 @@ class AppErrorBoundary extends React.Component {
   }
 }
 
-function StableHome() {
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.subtitle}>Loading RideBuddy...</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
-
 export default function App() {
+  useEffect(() => {
+    console.log('[App] RideBuddy app startup');
+  }, []);
+
   return (
     <AppErrorBoundary>
       <ThemeProvider>
@@ -79,6 +72,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24
   },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8
+  },
   subtitle: {
     fontSize: 16,
     marginTop: 12,
@@ -88,6 +87,12 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 14,
     marginTop: 8,
+    color: '#64748B',
+    textAlign: 'center'
+  },
+  hint: {
+    fontSize: 13,
+    marginTop: 12,
     color: '#64748B',
     textAlign: 'center'
   }

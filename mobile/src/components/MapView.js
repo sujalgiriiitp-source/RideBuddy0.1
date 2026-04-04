@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
-import { colors } from '../theme/colors';
+import colors from '../theme/colors';
 
 // Set Mapbox access token
 MapboxGL.setAccessToken('pk.your-mapbox-access-token-here'); // Replace with your token
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.backgroundMain,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundSecondary
+    backgroundColor: colors.backgroundAlt
   }
 });
 
