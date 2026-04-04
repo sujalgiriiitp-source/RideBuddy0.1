@@ -3,6 +3,7 @@
     "name": "RideBuddy",
     "slug": "ridebuddy",
     "version": "1.0.0",
+    "scheme": "ridebuddy",
     "platforms": [
       "ios",
       "android",
@@ -10,18 +11,37 @@
     ],
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sujal55.dev.ridebuddy"
+      "bundleIdentifier": "com.sujal.ridebuddy"
     },
     "android": {
-      "package": "com.sujal55.dev.ridebuddy"
+      "package": "com.sujal.ridebuddy",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
-      "bundler": "metro"
-    }
+      "bundler": "metro",
+      "output": "static"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4250b61c-79b4-44c6-8aee-0027314c2e2d"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

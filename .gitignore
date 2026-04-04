@@ -16,6 +16,8 @@ mobile/.env
 mobile/.expo/
 mobile/.expo-shared/
 mobile/dist/
+mobile/android/
+mobile/ios/
 
 # Editor
 .vscode/

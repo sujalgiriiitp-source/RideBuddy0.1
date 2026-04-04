@@ -1,6 +1,7 @@
 {
   "name": "ridebuddy-monorepo",
   "private": true,
+  "version": "1.0.0",
   "scripts": {
     "start": "node server/index.js",
     "dev": "npm --prefix server run dev",

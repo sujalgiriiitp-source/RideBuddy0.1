@@ -25,6 +25,10 @@ const getHostFromExpo = () => {
 
 const getWebFallbackApiUrl = () => {
   if (typeof window !== 'undefined' && window.location?.hostname) {
+    if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      return '';
+    }
+
     return buildApiUrl(window.location.hostname);
   }
 
@@ -45,7 +49,7 @@ const normalizeApiBaseUrl = (value) => {
 };
 
 const configuredApiUrl = Platform.OS === 'web'
-  ? process.env.EXPO_PUBLIC_API_URL_WEB || getWebFallbackApiUrl()
+  ? process.env.EXPO_PUBLIC_API_URL_WEB || process.env.EXPO_PUBLIC_API_URL || getWebFallbackApiUrl()
   : process.env.EXPO_PUBLIC_API_URL;
 
 const apiUrlFromEnv = normalizeApiBaseUrl(configuredApiUrl);
