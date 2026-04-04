@@ -23,6 +23,7 @@ export const useChatContext = () => {
 
 export const ChatProvider = ({ children }) => {
   const { user, token } = useAuth();
+  const userId = user?._id;
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -42,7 +43,7 @@ export const ChatProvider = ({ children }) => {
 
   // Initialize socket connection
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     const namespacedSocketUrl = `${API_URL}/chat`;
     console.log('[ChatContext] Connecting socket', { socketUrl: namespacedSocketUrl, platform: Platform.OS });
@@ -116,7 +117,7 @@ export const ChatProvider = ({ children }) => {
         clearTimeout(reconnectTimer.current);
       }
     };
-  }, [user, token]);
+  }, [userId, token]);
 
   // Handle new message
   const handleNewMessage = (message) => {

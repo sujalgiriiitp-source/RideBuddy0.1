@@ -108,8 +108,9 @@ const HomeScreen = ({ navigation }) => {
           <PullToRefresh onRefresh={onRefresh} refreshing={refreshing} />
         }
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.pageScrollContent}
       >
-        <ScreenContainer>
+        <ScreenContainer scroll={false}>
         <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
           <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
           <View style={styles.topRow}>
@@ -188,6 +189,9 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   page: {
     flex: 1
+  },
+  pageScrollContent: {
+    paddingBottom: tokens.spacing['2xl']
   },
   center: {
     flex: 1,

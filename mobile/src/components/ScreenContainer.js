@@ -5,7 +5,14 @@ import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { useTheme } from '../context/ThemeContext';
 
-const ScreenContainer = ({ children, scroll = true, refreshControl }) => {
+const ScreenContainer = ({
+  children,
+  scroll = true,
+  refreshControl,
+  contentContainerStyle,
+  style,
+  keyboardShouldPersistTaps = 'handled'
+}) => {
   const Wrapper = scroll ? ScrollView : View;
   const { isDarkMode, theme } = useTheme();
 
@@ -20,10 +27,12 @@ const ScreenContainer = ({ children, scroll = true, refreshControl }) => {
         style={styles.gradient}
       >
         <Wrapper
-          style={styles.container}
-          contentContainerStyle={scroll ? styles.content : undefined}
+          style={[styles.container, style]}
+          contentContainerStyle={scroll ? [styles.content, contentContainerStyle] : undefined}
           refreshControl={scroll ? refreshControl : undefined}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={scroll ? false : undefined}
+          keyboardShouldPersistTaps={scroll ? keyboardShouldPersistTaps : undefined}
+          nestedScrollEnabled={scroll ? true : undefined}
         >
           {children}
         </Wrapper>
@@ -47,7 +56,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: tokens.spacing.md,
     paddingTop: tokens.spacing.md,
-    paddingBottom: tokens.spacing.xl
+    paddingBottom: tokens.spacing['2xl'] || tokens.spacing.xl
   }
 });
 

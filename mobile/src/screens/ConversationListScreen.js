@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -9,6 +9,9 @@ import { useChatContext } from '../context/ChatContext';
 import { apiRequest } from '../api';
 import { ShimmerLoader, AnimatedEmptyState } from '../components';
 
+const CONVERSATIONS_FETCH_COOLDOWN_MS = 1500;
+let lastConversationsFetchAt = 0;
+
 /**
  * ConversationList Component
  * Display list of chat conversations with last message and unread badge
@@ -17,12 +20,34 @@ const ConversationList = ({ navigation }) => {
   const { conversations, setConversations, setUnreadCount } = useChatContext();
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const isFetchingRef = useRef(false);
+  const isMountedRef = useRef(false);
 
   useEffect(() => {
-    loadConversations();
+    isMountedRef.current = true;
+    loadConversations({ force: true });
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  const loadConversations = async () => {
+  const loadConversations = async ({ force = false } = {}) => {
+    const now = Date.now();
+
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    if (!force && now - lastConversationsFetchAt < CONVERSATIONS_FETCH_COOLDOWN_MS) {
+      if (isMountedRef.current && refreshing) {
+        setRefreshing(false);
+      }
+      return;
+    }
+
+    isFetchingRef.current = true;
+
     try {
       const token = await AsyncStorage.getItem('token');
 
@@ -38,17 +63,24 @@ const ConversationList = ({ navigation }) => {
         const total = response.conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
         setUnreadCount(total);
       }
+      lastConversationsFetchAt = Date.now();
     } catch (error) {
       console.error('Load conversations error:', error);
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setRefreshing(false);
+      }
+      isFetchingRef.current = false;
     }
   };
 
   const handleRefresh = () => {
+    if (isFetchingRef.current) {
+      return;
+    }
     setRefreshing(true);
-    loadConversations();
+    loadConversations({ force: true });
   };
 
   const handleConversationPress = (conversation) => {
