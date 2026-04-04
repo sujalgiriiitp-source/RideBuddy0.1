@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,13 +8,20 @@ import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import RideCard from '../components/RideCard';
 import AnimatedReveal from '../components/AnimatedReveal';
+import { LoadingSkeletonList } from '../components/LoadingSkeleton';
+import MotionPage from '../components/motion/MotionPage';
+import { MotionStaggerItem, MotionStaggerList } from '../components/motion/MotionStaggerList';
+import { useTheme } from '../context/ThemeContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
 const HomeScreen = ({ navigation }) => {
+  const { isDarkMode, toggleTheme, theme } = useTheme();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fabPressed, setFabPressed] = useState(false);
+  const fabScale = React.useRef(new Animated.Value(1)).current;
 
   const fetchRides = useCallback(async () => {
     if (__DEV__) {
@@ -59,76 +66,112 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  const onFabPressIn = () => {
+    setFabPressed(true);
+    Animated.spring(fabScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 3
+    }).start();
+  };
+
+  const onFabPressOut = () => {
+    setFabPressed(false);
+    Animated.spring(fabScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 5
+    }).start();
+  };
+
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <ScreenContainer>
+        <View style={styles.heroCard}>
+          <LoadingSkeletonList count={3} cardType="ride" />
+        </View>
+      </ScreenContainer>
     );
   }
 
   return (
-    <View style={styles.page}>
+    <MotionPage>
+      <View style={[styles.page, { backgroundColor: theme.background }]}> 
       <ScreenContainer refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
           <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
           <View style={styles.topRow}>
             <View>
-              <Text style={styles.topLabel}>Good Morning, Sujal</Text>
-              <Text style={styles.title}>Find your next ride</Text>
+              <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
+              <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
             </View>
-            <View style={styles.mapIconWrap}>
-              <Ionicons name="location" size={20} color="#FFFFFF" />
+            <View style={styles.headerActions}>
+              <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
+                <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={18} color={theme.primary} />
+              </Pressable>
+              <View style={[styles.mapIconWrap, { backgroundColor: theme.primary }]}> 
+                <Ionicons name="location" size={20} color="#FFFFFF" />
+              </View>
             </View>
           </View>
 
-          <View style={styles.searchWrap}>
+          <View style={[styles.searchWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
             <Ionicons name="search-outline" size={18} color="#8C98A8" />
             <TextInput
               placeholder="Search routes, destination, pickup"
               placeholderTextColor="#9AA4B2"
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: theme.text }]}
             />
           </View>
         </View>
 
         <View style={styles.sectionHead}>
-          <Text style={styles.heading}>Available rides</Text>
+          <Text style={[styles.heading, { color: theme.text }]}>Available rides</Text>
           <Text style={styles.count}>{rides.length}</Text>
         </View>
 
         {rides.length === 0 ? (
-          <View style={styles.emptyState}>
+          <View style={[styles.emptyState, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Ionicons name="car-outline" size={28} color="#94A3B8" />
-            <Text style={styles.emptyTitle}>No rides available</Text>
-            <Text style={styles.emptySub}>Pull to refresh or tap Create Ride.</Text>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No rides available</Text>
+            <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Pull to refresh or tap Create Ride.</Text>
           </View>
         ) : (
-          rides.map((ride, index) => (
-            <RideCard
-              key={ride._id}
-              ride={ride}
-              index={index}
-              onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
-            />
-          ))
+          <MotionStaggerList>
+            {rides.map((ride, index) => (
+              <MotionStaggerItem key={ride._id}>
+                <RideCard
+                  ride={ride}
+                  index={index}
+                  onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
+                />
+              </MotionStaggerItem>
+            ))}
+          </MotionStaggerList>
         )}
       </ScreenContainer>
 
       <AnimatedReveal delay={240} fromY={24} style={styles.fabWrap}>
-        <Pressable
-          style={styles.fabPress}
-          onPress={() => navigation.navigate('Create Ride')}
-          accessibilityRole="button"
-          accessibilityLabel="Create Ride"
-        >
-          <LinearGradient colors={tokens.gradients.fab} style={styles.fab}>
-            <Ionicons name="add" size={22} color="#FFFFFF" />
-            <Text style={styles.fabText}>Create Ride</Text>
-          </LinearGradient>
-        </Pressable>
+        <Animated.View style={{ transform: [{ scale: fabScale }] }}>
+          <Pressable
+            style={styles.fabPress}
+            onPress={() => navigation.navigate('Create Ride')}
+            onPressIn={onFabPressIn}
+            onPressOut={onFabPressOut}
+            accessibilityRole="button"
+            accessibilityLabel="Create Ride"
+          >
+            <LinearGradient colors={fabPressed ? ['#1E40AF', '#4338CA'] : tokens.gradients.fab} style={styles.fab}>
+              <Ionicons name="add" size={22} color="#FFFFFF" />
+              <Text style={styles.fabText}>Create Ride</Text>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
       </AnimatedReveal>
-    </View>
+      </View>
+    </MotionPage>
   );
 };
 
@@ -164,6 +207,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   topLabel: {
     color: colors.mutedText,

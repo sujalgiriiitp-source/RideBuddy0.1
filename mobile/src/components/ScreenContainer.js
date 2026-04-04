@@ -3,13 +3,22 @@ import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
+import { useTheme } from '../context/ThemeContext';
 
 const ScreenContainer = ({ children, scroll = true, refreshControl }) => {
   const Wrapper = scroll ? ScrollView : View;
+  const { isDarkMode, theme } = useTheme();
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <LinearGradient colors={[colors.background, colors.backgroundAlt]} style={styles.gradient}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+      <LinearGradient
+        colors={
+          isDarkMode
+            ? ['#0F172A', '#1E1B4B']
+            : [colors.background, colors.backgroundAlt]
+        }
+        style={styles.gradient}
+      >
         <Wrapper
           style={styles.container}
           contentContainerStyle={scroll ? styles.content : undefined}

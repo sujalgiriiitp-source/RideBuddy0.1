@@ -20,21 +20,31 @@ const radius = {
   md: 12,
   lg: 16,
   xl: 20,
+  xxl: 24,
   '2xl': 24,
+  pill: 999,
   full: 9999
 };
 
 const typography = {
-  h1: { fontSize: 32, fontWeight: '700', lineHeight: 40, letterSpacing: -1 },
-  h2: { fontSize: 28, fontWeight: '700', lineHeight: 36, letterSpacing: -0.5 },
-  h3: { fontSize: 24, fontWeight: '600', lineHeight: 32, letterSpacing: -0.25 },
-  h4: { fontSize: 20, fontWeight: '600', lineHeight: 28 },
-  h5: { fontSize: 18, fontWeight: '600', lineHeight: 26 },
-  body: { fontSize: 16, fontWeight: '400', lineHeight: 24 },
-  bodyMedium: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
-  label: { fontSize: 14, fontWeight: '600', lineHeight: 20, letterSpacing: 0.3 },
-  caption: { fontSize: 12, fontWeight: '500', lineHeight: 18 },
-  tiny: { fontSize: 11, fontWeight: '500', lineHeight: 16 }
+  hero: 32,
+  h1: 28,
+  h2: 22,
+  h3: 18,
+  body: 15,
+  caption: 12,
+  styles: {
+    h1: { fontSize: 32, fontWeight: '700', lineHeight: 40, letterSpacing: -1 },
+    h2: { fontSize: 28, fontWeight: '700', lineHeight: 36, letterSpacing: -0.5 },
+    h3: { fontSize: 24, fontWeight: '600', lineHeight: 32, letterSpacing: -0.25 },
+    h4: { fontSize: 20, fontWeight: '600', lineHeight: 28 },
+    h5: { fontSize: 18, fontWeight: '600', lineHeight: 26 },
+    body: { fontSize: 16, fontWeight: '400', lineHeight: 24 },
+    bodyMedium: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    label: { fontSize: 14, fontWeight: '600', lineHeight: 20, letterSpacing: 0.3 },
+    caption: { fontSize: 12, fontWeight: '500', lineHeight: 18 },
+    tiny: { fontSize: 11, fontWeight: '500', lineHeight: 16 }
+  }
 };
 
 const shadows = {

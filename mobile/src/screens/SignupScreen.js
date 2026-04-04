@@ -7,7 +7,6 @@ import ScreenTransition from '../components/ScreenTransition';
 import PremiumInput from '../components/PremiumInput';
 import PremiumButton from '../components/PremiumButton';
 import PremiumCard from '../components/PremiumCard';
-import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -167,24 +166,24 @@ const styles = StyleSheet.create({
     ...tokens.shadows.lg
   },
   brandTitle: {
-    ...tokens.typography.h5,
+    ...tokens.typography.styles.h5,
     color: colors.text
   },
   brandSub: {
     marginTop: tokens.spacing.xs,
     color: colors.textTertiary,
-    ...tokens.typography.caption
+    ...tokens.typography.styles.caption
   },
   heroSection: {
     marginBottom: tokens.spacing['2xl']
   },
   title: {
-    ...tokens.typography.h2,
+    ...tokens.typography.styles.h2,
     color: colors.text,
     marginBottom: tokens.spacing.md
   },
   subtitle: {
-    ...tokens.typography.body,
+    ...tokens.typography.styles.body,
     color: colors.textSecondary,
     lineHeight: 24
   },

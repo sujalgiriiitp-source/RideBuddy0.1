@@ -3,6 +3,7 @@ import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, View } fr
 import Toast from 'react-native-toast-message';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/context/AuthContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 
 class AppErrorBoundary extends React.Component {
   constructor(props) {
@@ -51,9 +52,11 @@ function StableHome() {
 export default function App() {
   return (
     <AppErrorBoundary>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </ThemeProvider>
       <Toast />
     </AppErrorBoundary>
   );

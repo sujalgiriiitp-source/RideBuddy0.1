@@ -67,6 +67,18 @@ const PremiumButton = ({
     }
   };
 
+  const getTextSizeStyle = () => {
+    switch (size) {
+      case 'sm':
+        return styles.textSmall;
+      case 'lg':
+        return styles.textLarge;
+      case 'md':
+      default:
+        return styles.textMedium;
+    }
+  };
+
   const isDisabledOrLoading = disabled || loading;
 
   return (
@@ -99,7 +111,7 @@ const PremiumButton = ({
                 <View style={[styles.loaderCircle, { borderColor: colors.white }]} />
               </View>
             )}
-            <Text style={[styles.text, getSizeStyles().textSize]}>
+            <Text style={[styles.text, getTextSizeStyle()]}>
               {loading ? 'Loading...' : title}
             </Text>
           </View>
@@ -150,14 +162,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3
   },
-  sizeSmall: {
-    textSize: { fontSize: 13, fontWeight: '600' }
+  textSmall: {
+    fontSize: 13,
+    fontWeight: '600'
   },
-  sizeMedium: {
-    textSize: { fontSize: 15, fontWeight: '600' }
+  textMedium: {
+    fontSize: 15,
+    fontWeight: '600'
   },
-  sizeLarge: {
-    textSize: { fontSize: 16, fontWeight: '700' }
+  textLarge: {
+    fontSize: 16,
+    fontWeight: '700'
   },
   icon: {
     marginRight: tokens.spacing.sm
