@@ -16,7 +16,7 @@ const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Create Ride" component={CreateRideScreen} />
       <Tab.Screen name="Intent" component={IntentScreen} />
@@ -27,7 +27,7 @@ const MainTabs = () => {
 
 const AppStack = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Ride Details" component={RideDetailsScreen} />
     </Stack.Navigator>
@@ -36,7 +36,7 @@ const AppStack = () => {
 
 const AuthStack = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
     </Stack.Navigator>
