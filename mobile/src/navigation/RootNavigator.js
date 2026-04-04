@@ -1,6 +1,5 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -128,7 +127,7 @@ const AuthStack = () => {
   );
 };
 
-const RootNavigator = React.forwardRef((props, ref) => {
+const RootNavigator = () => {
   const { isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
@@ -139,11 +138,7 @@ const RootNavigator = React.forwardRef((props, ref) => {
     );
   }
 
-  return (
-    <NavigationContainer ref={ref}>
-      {isAuthenticated ? <AppStack /> : <AuthStack />}
-    </NavigationContainer>
-  );
-});
+  return isAuthenticated ? <AppStack /> : <AuthStack />;
+};
 
 export default RootNavigator;

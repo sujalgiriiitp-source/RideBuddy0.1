@@ -52,15 +52,13 @@ function StableHome() {
 }
 
 export default function App() {
-  const navigationRef = React.useRef(null);
-
   return (
     <AppErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
           <ChatProvider>
-            <NotificationProvider navigation={navigationRef.current}>
-              <RootNavigator ref={navigationRef} />
+            <NotificationProvider>
+              <RootNavigator />
             </NotificationProvider>
           </ChatProvider>
         </AuthProvider>

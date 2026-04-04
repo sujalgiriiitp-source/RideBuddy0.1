@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "npm --prefix server run dev",
+    "build": "npm --prefix mobile install && npm --prefix mobile run build",
     "postinstall": "npm --prefix server install --omit=dev"
   },
   "engines": {

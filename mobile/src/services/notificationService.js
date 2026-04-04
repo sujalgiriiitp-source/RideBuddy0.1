@@ -5,14 +5,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest } from '../api';
 
 // Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    priority: Notifications.AndroidNotificationPriority.HIGH
-  })
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      priority: Notifications.AndroidNotificationPriority.HIGH
+    })
+  });
+}
 
 const NOTIFICATION_TOKEN_KEY = '@ridebuddy:notification_token';
 const DEVICE_ID_KEY = '@ridebuddy:device_id';

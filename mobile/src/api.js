@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './config/apiConfig';
+import { API_BASE_URL, API_URL } from './config';
 
 export const apiRequest = async (path, options = {}) => {
   const {
@@ -21,7 +21,7 @@ export const apiRequest = async (path, options = {}) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
   if (!API_BASE_URL) {
-    throw new Error('Missing API URL. Set EXPO_PUBLIC_API_URL in mobile/.env to http://<LOCAL_IP>:5002/api');
+    throw new Error('Missing API URL. Set EXPO_PUBLIC_API_URL or use default Render backend.');
   }
 
   const url = `${API_BASE_URL}${normalizedPath}`;
@@ -90,3 +90,4 @@ export const apiRequest = async (path, options = {}) => {
 };
 
 export const apiBaseUrl = API_BASE_URL;
+export { API_URL };

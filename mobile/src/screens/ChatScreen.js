@@ -14,8 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'react-native-image-picker';
-import { colors } from '../theme/colors';
-import { tokens } from '../theme/tokens';
+import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 import { useChatContext } from '../context/ChatContext';
 import { apiRequest, API_URL } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -140,6 +140,10 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const handleImagePick = async () => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibrary({
       mediaType: 'photo',
       quality: 0.8,
@@ -275,13 +279,13 @@ const ChatScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundMain
+    backgroundColor: colors.background
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundMain
+    backgroundColor: colors.background
   },
   messagesList: {
     padding: tokens.spacing.md
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '75%',
-    borderRadius: tokens.borderRadius.lg,
+    borderRadius: tokens.radius.lg,
     padding: tokens.spacing.sm,
     ...tokens.shadows.sm
   },
@@ -333,7 +337,7 @@ const styles = StyleSheet.create({
     color: colors.white
   },
   otherMessageText: {
-    color: colors.textPrimary
+    color: colors.text
   },
   messageTime: {
     fontSize: 11,
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
   messageImage: {
     width: 200,
     height: 200,
-    borderRadius: tokens.borderRadius.md,
+    borderRadius: tokens.radius.md,
     marginBottom: 4
   },
   typingIndicator: {
@@ -375,12 +379,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: tokens.borderRadius.lg,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: tokens.radius.lg,
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.sm,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: colors.text,
     maxHeight: 100
   },
   sendButton: {
