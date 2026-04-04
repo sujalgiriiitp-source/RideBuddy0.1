@@ -1,6 +1,5 @@
 import React from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/context/AuthContext';
@@ -53,9 +52,7 @@ export default function App() {
   return (
     <AppErrorBoundary>
       <AuthProvider>
-        <NavigationContainer fallback={<StableHome />}>
-          <RootNavigator />
-        </NavigationContainer>
+        <RootNavigator />
       </AuthProvider>
       <Toast />
     </AppErrorBoundary>
