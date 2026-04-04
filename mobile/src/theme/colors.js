@@ -51,6 +51,7 @@ const colors = {
   warning: '#F59E0B',
   warningLight: '#FCD34D',
   warningDark: '#D97706',
+  error: '#FF3B30',
   danger: '#DC2626',
   dangerLight: '#FCA5A5',
   dangerDark: '#991B1B',
@@ -96,6 +97,7 @@ const colors = {
     text: '#F1F5F9',
     textSecondary: '#CBD5E1',
     textTertiary: '#94A3B8',
+    error: '#FF453A',
     border: '#334155',
     overlay: 'rgba(0,0,0,0.5)'
   },
@@ -116,6 +118,9 @@ const colors = {
   gray700: '#374151',
   gray800: '#1F2937',
   gray900: '#111827',
+  backgroundMain: '#EEF2FF',
+  backgroundSecondary: '#F8FAFF',
+  textPrimary: '#0F172A',
 
   // ============================================
   // GRADIENT GLOW EFFECTS (for micro-interactions)

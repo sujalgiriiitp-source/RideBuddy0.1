@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
-import { tokens } from '../theme/tokens';
+import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 /**
  * Toast-style notification shown at top of screen
@@ -16,7 +16,7 @@ const NotificationToast = ({ notification, onPress, onDismiss }) => {
   useEffect(() => {
     if (notification) {
       // Haptic feedback
-      if (Platform.OS !== 'web') {
+      if (Platform.OS !== 'web' && Haptics?.notificationAsync) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
@@ -87,7 +87,7 @@ const NotificationToast = ({ notification, onPress, onDismiss }) => {
     >
       <Pressable onPress={handlePress} style={styles.pressable}>
         <LinearGradient
-          colors={[colors.primary, colors.secondary]}
+          colors={[colors?.primary || '#2563EB', colors?.secondaryAccent || '#7C3AED']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.gradient}
@@ -110,29 +110,34 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     top: 50,
-    left: tokens.spacing.md,
-    right: tokens.spacing.md,
+    left: tokens?.spacing?.md || 16,
+    right: tokens?.spacing?.md || 16,
     zIndex: 1000,
-    ...tokens.shadows.strong
+    ...(tokens?.shadows?.strong || {
+      shadowColor: '#000',
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
+      elevation: 10
+    })
   },
   pressable: {
-    borderRadius: tokens.borderRadius.lg
+    borderRadius: tokens?.borderRadius?.lg || tokens?.radius?.lg || 16
   },
   gradient: {
-    borderRadius: tokens.borderRadius.lg,
-    padding: tokens.spacing.md
+    borderRadius: tokens?.borderRadius?.lg || tokens?.radius?.lg || 16,
+    padding: tokens?.spacing?.md || 16
   },
   content: {
-    gap: tokens.spacing.xxs
+    gap: tokens?.spacing?.xxs || 2
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.white
+    color: colors?.white || '#FFFFFF'
   },
   body: {
     fontSize: 14,
-    color: colors.white,
+    color: colors?.white || '#FFFFFF',
     opacity: 0.9
   }
 });

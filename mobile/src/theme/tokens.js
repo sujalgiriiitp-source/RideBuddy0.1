@@ -167,6 +167,7 @@ export default {
   spacing,
   spacingHelpers,
   radius,
+  borderRadius: radius,
   typography,
   shadows,
   elevation,

@@ -40,7 +40,7 @@ const InputField = ({
     setFocused(nextFocused);
     
     // Haptic feedback on focus
-    if (nextFocused && haptics && Platform.OS !== 'web') {
+    if (nextFocused && haptics && Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 

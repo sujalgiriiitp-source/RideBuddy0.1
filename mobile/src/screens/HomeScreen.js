@@ -66,7 +66,7 @@ const HomeScreen = ({ navigation }) => {
 
   const onFabPressIn = () => {
     setFabPressed(true);
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     Animated.spring(fabScale, {

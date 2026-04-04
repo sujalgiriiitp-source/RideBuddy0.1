@@ -4,6 +4,9 @@ import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
 
+// Web fallback: limit Socket.io features
+const isWeb = Platform.OS === 'web';
+
 const ChatContext = createContext({
   socket: null,
   conversations: [],
@@ -31,7 +34,13 @@ export const ChatProvider = ({ children }) => {
 
   // Initialize socket connection
   useEffect(() => {
-    if (!user || Platform.OS === 'web') return;
+    if (!user) return;
+    
+    // Web: Skip WebSocket if needed (or use with caution)
+    if (isWeb) {
+      console.log('Chat WebSocket limited on web');
+      // Could still enable but with fallback handling
+    }
 
     const chatSocket = io(`${API_URL}/chat`, {
       transports: ['websocket'],

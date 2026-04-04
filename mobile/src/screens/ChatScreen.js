@@ -119,7 +119,7 @@ const ChatScreen = ({ route, navigation }) => {
     try {
       await sendMessage(conversationId, 'text', messageText);
       
-      if (Platform.OS !== 'web') {
+      if (Platform.OS !== 'web' && Haptics?.impactAsync) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {

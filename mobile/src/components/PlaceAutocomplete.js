@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TextInput, FlatList, Text, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
-import { tokens } from '../theme/tokens';
+import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 import { apiRequest } from '../api';
 
 /**
@@ -74,7 +74,7 @@ const PlaceAutocomplete = ({
   };
 
   const handleSelectPlace = (place) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
@@ -92,7 +92,7 @@ const PlaceAutocomplete = ({
   };
 
   const clearQuery = () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setQuery('');

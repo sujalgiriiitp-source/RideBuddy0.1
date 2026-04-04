@@ -36,7 +36,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const statusLabel = isFull ? 'Full' : 'Available';
 
   const animateTo = (toValue, isPress = false) => {
-    if (isPress && Platform.OS !== 'web') {
+    if (isPress && Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 

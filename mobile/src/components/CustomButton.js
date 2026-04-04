@@ -24,7 +24,7 @@ const CustomButton = ({
   const isDisabled = loading || disabled;
 
   const animateTo = (toValue, triggerHaptic = false) => {
-    if (triggerHaptic && haptics && Platform.OS !== 'web') {
+    if (triggerHaptic && haptics && Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     

@@ -31,7 +31,7 @@ const PressableScale = ({
     }).start();
 
     // Haptic feedback on press
-    if (haptics && Platform.OS !== 'web') {
+    if (haptics && Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
@@ -56,7 +56,7 @@ const PressableScale = ({
     if (disabled || !onLongPress) return;
 
     // Stronger haptic for long press
-    if (haptics && Platform.OS !== 'web') {
+    if (haptics && Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 

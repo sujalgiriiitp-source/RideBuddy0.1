@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
-import { tokens } from '../theme/tokens';
+import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 import { useChatContext } from '../context/ChatContext';
 import { apiRequest } from '../api';
 import { ShimmerLoader, AnimatedEmptyState } from '../components';
@@ -48,7 +48,7 @@ const ConversationList = ({ navigation }) => {
   };
 
   const handleConversationPress = (conversation) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 

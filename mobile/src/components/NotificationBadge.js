@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { colors } from '../theme/colors';
-import { tokens } from '../theme/tokens';
+import colors from '../theme/colors';
 
 const NotificationBadge = ({ count, animated = true, size = 'md' }) => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
@@ -50,16 +49,16 @@ const NotificationBadge = ({ count, animated = true, size = 'md' }) => {
 
 const styles = StyleSheet.create({
   badge: {
-    backgroundColor: colors.error,
+    backgroundColor: colors?.error || '#FF3B30',
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.backgroundMain,
+    borderColor: colors?.backgroundMain || colors?.background || '#EEF2FF',
     minWidth: 20
   },
   badgeText: {
-    color: colors.white,
+    color: colors?.white || '#FFFFFF',
     fontWeight: '700',
     textAlign: 'center'
   }
