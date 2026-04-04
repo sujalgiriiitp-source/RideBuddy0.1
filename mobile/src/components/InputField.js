@@ -69,26 +69,28 @@ const InputField = ({
           { transform: [{ scale }] }
         ]}
       >
-        {icon ? (
-          <View style={styles.iconWrap}>
-            <Ionicons name={icon} size={17} color={focused ? colors.primary : colors.mutedText} />
-          </View>
-        ) : null}
         {!!label ? <Animated.Text style={[styles.floatingLabel, floatingLabelStyle]}>{label}</Animated.Text> : null}
-        <TextInput
-          style={[styles.input, icon ? styles.inputWithIcon : undefined, inputStyle]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={focused ? placeholder : ''}
-          placeholderTextColor="#9AA4B2"
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          autoCorrect={autoCorrect}
-          onFocus={() => animate(true)}
-          onBlur={() => animate(false)}
-          {...rest}
-        />
+        <View style={styles.inputContainer}>
+          {icon ? (
+            <View style={styles.iconWrap}>
+              <Ionicons name={icon} size={18} color={focused ? colors.primary : colors.mutedText} />
+            </View>
+          ) : null}
+          <TextInput
+            style={[styles.input, inputStyle]}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={focused ? placeholder : ''}
+            placeholderTextColor="#9AA4B2"
+            secureTextEntry={secureTextEntry}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            autoCorrect={autoCorrect}
+            onFocus={() => animate(true)}
+            onBlur={() => animate(false)}
+            {...rest}
+          />
+        </View>
       </Animated.View>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -100,11 +102,14 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   shell: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: tokens.radius.lg,
     borderWidth: 1,
     borderColor: '#D9E3F8',
     backgroundColor: 'rgba(255,255,255,0.88)',
-    minHeight: 58,
+    minHeight: 56,
+    paddingVertical: 12,
     ...tokens.shadows.soft
   },
   shellFocused: {
@@ -120,22 +125,27 @@ const styles = StyleSheet.create({
     left: 16,
     fontWeight: '700'
   },
+  inputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14
+  },
   iconWrap: {
-    position: 'absolute',
-    left: 14,
-    top: 21,
-    zIndex: 2
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    width: 24,
+    height: 24
   },
   input: {
-    height: 58,
-    paddingHorizontal: 16,
-    paddingTop: 22,
+    flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    color: colors.text
-  },
-  inputWithIcon: {
-    paddingLeft: 40
+    color: colors.text,
+    paddingTop: 6,
+    lineHeight: 20,
+    verticalAlign: 'middle'
   },
   errorText: {
     marginTop: 7,
