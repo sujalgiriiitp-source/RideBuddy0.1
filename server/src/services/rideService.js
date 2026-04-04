@@ -5,6 +5,7 @@ const Driver = require('../models/Driver');
 const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
 const { getSocketServer } = require('../config/socket');
+const NotificationEventService = require('./notificationEventService');
 
 const rideRoom = (rideId) => `ride:${rideId}`;
 
@@ -41,6 +42,12 @@ const createRide = async ({ userId, pickup, drop, source, destination, dateTime,
     pickup: ride.pickup,
     drop: ride.drop,
     updatedAt: ride.updatedAt
+  });
+
+  // Trigger notification for matching intents
+  NotificationEventService.onRideCreated(ride).catch(err => {
+    // Log but don't fail the request
+    console.error('Notification error:', err);
   });
 
   return ride;
@@ -127,6 +134,11 @@ const acceptRide = async ({ rideId, driverUserId }) => {
     status: updatedRide.status,
     driver: updatedRide.driver,
     updatedAt: updatedRide.updatedAt
+  });
+
+  // Trigger notification for ride acceptance
+  NotificationEventService.onRideAccepted(updatedRide).catch(err => {
+    console.error('Notification error:', err);
   });
 
   return updatedRide;
@@ -263,6 +275,12 @@ const joinRide = async ({ rideId, userId, seatsBooked }) => {
   const hydratedRide = await Ride.findById(rideId)
     .populate('createdBy', 'name email phone')
     .populate('passengers', 'name email');
+
+  // Trigger notification for ride join
+  const passenger = await User.findById(userId).select('name email');
+  NotificationEventService.onRideJoined(hydratedRide, passenger).catch(err => {
+    console.error('Notification error:', err);
+  });
 
   return {
     ride: hydratedRide,

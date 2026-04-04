@@ -8,7 +8,7 @@ import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
-import AnimatedReveal from '../components/AnimatedReveal';
+import { ProgressBar, SuccessAnimation } from '../components';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -16,6 +16,11 @@ const CreateRideScreen = () => {
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(1);
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  const totalSteps = 3;
+  const progress = (step / totalSteps) * 100;
 
   const normalizeDateInput = (value) => {
     const raw = String(value || '').trim();

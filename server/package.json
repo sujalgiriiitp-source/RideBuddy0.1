@@ -9,9 +9,11 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.16.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "expo-server-sdk": "^3.10.0",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
@@ -20,6 +22,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
     "winston": "^3.15.0"
   },

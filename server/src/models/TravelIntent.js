@@ -17,6 +17,14 @@ const travelIntentSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    sourceCoordinates: {
+      longitude: { type: Number },
+      latitude: { type: Number }
+    },
+    destinationCoordinates: {
+      longitude: { type: Number },
+      latitude: { type: Number }
+    },
     dateTime: {
       type: Date,
       required: true
@@ -26,5 +34,8 @@ const travelIntentSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+travelIntentSchema.index({ sourceCoordinates: '2dsphere' });
+travelIntentSchema.index({ destinationCoordinates: '2dsphere' });
 
 module.exports = mongoose.model('TravelIntent', travelIntentSchema);

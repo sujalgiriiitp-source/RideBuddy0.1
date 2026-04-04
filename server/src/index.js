@@ -6,6 +6,7 @@ const logger = require('./config/logger');
 const connectDatabase = require('./config/database');
 const { setSocketServer } = require('./config/socket');
 const setupRideTrackingSocket = require('./socket/rideTrackingSocket');
+const setupChatSocket = require('./socket/chatSocket');
 
 const startServer = async () => {
   try {
@@ -27,6 +28,7 @@ const startServer = async () => {
 
       setSocketServer(io);
       setupRideTrackingSocket(io);
+      setupChatSocket(io);
 
       httpServer.listen(port, () => resolve(httpServer));
       httpServer.on('error', (error) => reject(error));

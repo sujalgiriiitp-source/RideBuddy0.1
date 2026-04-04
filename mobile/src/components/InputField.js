@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -17,11 +18,13 @@ const InputField = ({
   style,
   inputStyle,
   icon,
+  haptics = true,
   ...rest
 }) => {
   const [focused, setFocused] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
   const lift = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   const shouldLift = focused || !!value;
 
@@ -35,6 +38,12 @@ const InputField = ({
 
   const animate = (nextFocused) => {
     setFocused(nextFocused);
+    
+    // Haptic feedback on focus
+    if (nextFocused && haptics && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     Animated.parallel([
       Animated.timing(scale, {
         toValue: nextFocused ? 1.01 : 1,
@@ -44,6 +53,12 @@ const InputField = ({
       Animated.timing(lift, {
         toValue: nextFocused || !!value ? 1 : 0,
         duration: 180,
+        useNativeDriver: false
+      }),
+      // Border glow animation
+      Animated.timing(glowAnim, {
+        toValue: nextFocused ? 1 : 0,
+        duration: 200,
         useNativeDriver: false
       })
     ]).start();
@@ -59,6 +74,11 @@ const InputField = ({
         : colors.lightText
   };
 
+  const borderGlow = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(37, 99, 235, 0)', colors.glow.primary]
+  });
+
   return (
     <View style={[styles.wrapper, style]}>
       <Animated.View
@@ -66,7 +86,10 @@ const InputField = ({
           styles.shell,
           focused && styles.shellFocused,
           !!error && styles.shellError,
-          { transform: [{ scale }] }
+          { 
+            transform: [{ scale }],
+            shadowColor: borderGlow
+          }
         ]}
       >
         {!!label ? <Animated.Text style={[styles.floatingLabel, floatingLabelStyle]}>{label}</Animated.Text> : null}

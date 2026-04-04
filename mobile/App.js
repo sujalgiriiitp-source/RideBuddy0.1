@@ -4,6 +4,8 @@ import Toast from 'react-native-toast-message';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { NotificationProvider } from './src/context/NotificationContext';
+import { ChatProvider } from './src/context/ChatContext';
 
 class AppErrorBoundary extends React.Component {
   constructor(props) {
@@ -50,11 +52,17 @@ function StableHome() {
 }
 
 export default function App() {
+  const navigationRef = React.useRef(null);
+
   return (
     <AppErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <RootNavigator />
+          <ChatProvider>
+            <NotificationProvider navigation={navigationRef.current}>
+              <RootNavigator ref={navigationRef} />
+            </NotificationProvider>
+          </ChatProvider>
         </AuthProvider>
       </ThemeProvider>
       <Toast />

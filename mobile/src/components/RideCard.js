@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import CustomButton from './CustomButton';
 import AnimatedReveal from './AnimatedReveal';
 import colors from '../theme/colors';
@@ -22,6 +23,7 @@ const formatDateTime = (value) => {
 
 const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false }) => {
   const scale = useRef(new Animated.Value(1)).current;
+  const shadowAnim = useRef(new Animated.Value(0)).current;
 
   const source = ride.source || ride.from || 'Unknown source';
   const destination = ride.destination || ride.to || 'Unknown destination';
@@ -33,19 +35,48 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const isLowSeats = seatCount > 0 && seatCount <= 1;
   const statusLabel = isFull ? 'Full' : 'Available';
 
-  const animateTo = (toValue) => {
-    Animated.spring(scale, {
-      toValue,
-      useNativeDriver: true,
-      speed: 25,
-      bounciness: 4
-    }).start();
+  const animateTo = (toValue, isPress = false) => {
+    if (isPress && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 100
+      }),
+      Animated.timing(shadowAnim, {
+        toValue: toValue < 1 ? 1 : 0,
+        duration: 150,
+        useNativeDriver: false
+      })
+    ]).start();
   };
+
+  const animatedShadowOpacity = shadowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [tokens.shadows.soft.shadowOpacity, tokens.shadows.lg.shadowOpacity]
+  });
 
   return (
     <AnimatedReveal delay={80 + index * 70}>
-      <Animated.View style={[styles.card, highlight && styles.highlightCard, { transform: [{ scale }] }]}>
-        <Pressable onPress={onPress} onPressIn={() => animateTo(0.985)} onPressOut={() => animateTo(1)}>
+      <Animated.View 
+        style={[
+          styles.card, 
+          highlight && styles.highlightCard, 
+          { 
+            transform: [{ scale }],
+            shadowOpacity: animatedShadowOpacity
+          }
+        ]}
+      >
+        <Pressable 
+          onPress={onPress} 
+          onPressIn={() => animateTo(0.97, true)} 
+          onPressOut={() => animateTo(1)}
+        >
           <LinearGradient colors={['rgba(37,99,235,0.12)', 'rgba(124,58,237,0.06)']} style={styles.topStrip} />
 
           <View style={styles.routeRow}>

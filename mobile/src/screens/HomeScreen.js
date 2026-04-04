@@ -1,16 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Animated, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
+import * as Haptics from 'expo-haptics';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import RideCard from '../components/RideCard';
-import AnimatedReveal from '../components/AnimatedReveal';
-import { LoadingSkeletonList } from '../components/LoadingSkeleton';
-import MotionPage from '../components/motion/MotionPage';
-import { MotionStaggerItem, MotionStaggerList } from '../components/motion/MotionStaggerList';
+import { RideCardSkeleton, AnimatedEmptyState, PullToRefresh, StaggeredList } from '../components';
 import { useTheme } from '../context/ThemeContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -68,11 +66,14 @@ const HomeScreen = ({ navigation }) => {
 
   const onFabPressIn = () => {
     setFabPressed(true);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     Animated.spring(fabScale, {
       toValue: 0.95,
       useNativeDriver: true,
-      speed: 25,
-      bounciness: 3
+      friction: 8,
+      tension: 100
     }).start();
   };
 
@@ -81,8 +82,8 @@ const HomeScreen = ({ navigation }) => {
     Animated.spring(fabScale, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 25,
-      bounciness: 5
+      friction: 8,
+      tension: 100
     }).start();
   };
 
@@ -90,16 +91,25 @@ const HomeScreen = ({ navigation }) => {
     return (
       <ScreenContainer>
         <View style={styles.heroCard}>
-          <LoadingSkeletonList count={3} cardType="ride" />
+          <View style={styles.skeletonHeader}>
+            <RideCardSkeleton />
+            <RideCardSkeleton />
+            <RideCardSkeleton />
+          </View>
         </View>
       </ScreenContainer>
     );
   }
 
   return (
-    <MotionPage>
-      <View style={[styles.page, { backgroundColor: theme.background }]}> 
-      <ScreenContainer refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
+      <ScrollView
+        refreshControl={
+          <PullToRefresh onRefresh={onRefresh} refreshing={refreshing} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <ScreenContainer>
         <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
           <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
           <View style={styles.topRow}>
@@ -133,45 +143,45 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         {rides.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Ionicons name="car-outline" size={28} color="#94A3B8" />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No rides available</Text>
-            <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Pull to refresh or tap Create Ride.</Text>
-          </View>
+          <AnimatedEmptyState
+            icon="car-outline"
+            title="No rides available"
+            message="Pull to refresh or create a new ride to get started."
+            actionText="Create Ride"
+            onActionPress={() => navigation.navigate('Create Ride')}
+            iconColor={colors.primary}
+          />
         ) : (
-          <MotionStaggerList>
+          <StaggeredList staggerDelay={80}>
             {rides.map((ride, index) => (
-              <MotionStaggerItem key={ride._id}>
-                <RideCard
-                  ride={ride}
-                  index={index}
-                  onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
-                />
-              </MotionStaggerItem>
+              <RideCard
+                key={ride._id}
+                ride={ride}
+                index={index}
+                onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
+              />
             ))}
-          </MotionStaggerList>
+          </StaggeredList>
         )}
       </ScreenContainer>
+      </ScrollView>
 
-      <AnimatedReveal delay={240} fromY={24} style={styles.fabWrap}>
-        <Animated.View style={{ transform: [{ scale: fabScale }] }}>
-          <Pressable
-            style={styles.fabPress}
-            onPress={() => navigation.navigate('Create Ride')}
-            onPressIn={onFabPressIn}
-            onPressOut={onFabPressOut}
-            accessibilityRole="button"
-            accessibilityLabel="Create Ride"
-          >
-            <LinearGradient colors={fabPressed ? ['#1E40AF', '#4338CA'] : tokens.gradients.fab} style={styles.fab}>
-              <Ionicons name="add" size={22} color="#FFFFFF" />
-              <Text style={styles.fabText}>Create Ride</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
-      </AnimatedReveal>
-      </View>
-    </MotionPage>
+      <Animated.View style={[styles.fabWrap, { transform: [{ scale: fabScale }] }]}>
+        <Pressable
+          style={styles.fabPress}
+          onPress={() => navigation.navigate('Create Ride')}
+          onPressIn={onFabPressIn}
+          onPressOut={onFabPressOut}
+          accessibilityRole="button"
+          accessibilityLabel="Create Ride"
+        >
+          <LinearGradient colors={fabPressed ? ['#1E40AF', '#4338CA'] : tokens.gradients.fab} style={styles.fab}>
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+            <Text style={styles.fabText}>Create Ride</Text>
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 };
 
@@ -325,6 +335,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800'
+  },
+  skeletonHeader: {
+    gap: 12,
+    paddingTop: 20
   }
 });
 

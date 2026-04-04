@@ -115,7 +115,18 @@ const colors = {
   gray600: '#4B5563',
   gray700: '#374151',
   gray800: '#1F2937',
-  gray900: '#111827'
+  gray900: '#111827',
+
+  // ============================================
+  // GRADIENT GLOW EFFECTS (for micro-interactions)
+  // ============================================
+  glow: {
+    primary: 'rgba(37, 99, 235, 0.2)',
+    success: 'rgba(34, 197, 94, 0.2)',
+    danger: 'rgba(220, 38, 38, 0.2)',
+    warning: 'rgba(245, 158, 11, 0.2)',
+    info: 'rgba(6, 182, 212, 0.2)'
+  }
 };
 
 export default colors;

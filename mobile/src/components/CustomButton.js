@@ -1,7 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -14,14 +15,19 @@ const CustomButton = ({
   variant = 'primary',
   icon,
   style,
-  textStyle
+  textStyle,
+  haptics = true
 }) => {
   const scale = useSharedValue(1);
   const isSecondary = variant === 'secondary';
   const isDanger = variant === 'danger';
   const isDisabled = loading || disabled;
 
-  const animateTo = (toValue) => {
+  const animateTo = (toValue, triggerHaptic = false) => {
+    if (triggerHaptic && haptics && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
     scale.value = withSpring(toValue, {
       damping: 16,
       stiffness: 220,
@@ -49,7 +55,7 @@ const CustomButton = ({
     <Animated.View style={[styles.wrap, wrapAnimatedStyle, style]}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => animateTo(0.985)}
+        onPressIn={() => animateTo(0.97, true)}
         onPressOut={() => animateTo(1)}
         disabled={isDisabled}
         style={[styles.button, variantContainerStyle, isDisabled && styles.buttonDisabled]}

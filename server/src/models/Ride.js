@@ -66,6 +66,23 @@ const rideSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    sourceCoordinates: {
+      longitude: { type: Number },
+      latitude: { type: Number }
+    },
+    destinationCoordinates: {
+      longitude: { type: Number },
+      latitude: { type: Number }
+    },
+    routePolyline: {
+      type: [[Number]] // Array of [lng, lat] coordinates
+    },
+    distance: {
+      type: Number // Distance in meters
+    },
+    estimatedDuration: {
+      type: Number // Duration in seconds
+    },
     dateTime: {
       type: Date,
       required: true
@@ -94,5 +111,7 @@ const rideSchema = new mongoose.Schema(
 
 rideSchema.index({ user: 1, status: 1, createdAt: -1 });
 rideSchema.index({ driver: 1, status: 1, createdAt: -1 });
+rideSchema.index({ sourceCoordinates: '2dsphere' });
+rideSchema.index({ destinationCoordinates: '2dsphere' });
 
 module.exports = mongoose.model('Ride', rideSchema);

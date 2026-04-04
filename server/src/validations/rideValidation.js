@@ -5,6 +5,17 @@ const createRideSchema = Joi.object({
   drop: Joi.string().trim(),
   source: Joi.string().trim(),
   destination: Joi.string().trim(),
+  sourceCoordinates: Joi.object({
+    longitude: Joi.number().min(-180).max(180).required(),
+    latitude: Joi.number().min(-90).max(90).required()
+  }).optional(),
+  destinationCoordinates: Joi.object({
+    longitude: Joi.number().min(-180).max(180).required(),
+    latitude: Joi.number().min(-90).max(90).required()
+  }).optional(),
+  routePolyline: Joi.array().items(Joi.array().items(Joi.number()).length(2)).optional(),
+  distance: Joi.number().min(0).optional(),
+  estimatedDuration: Joi.number().min(0).optional(),
   dateTime: Joi.date().iso().required(),
   price: Joi.number().min(0).required(),
   seatsAvailable: Joi.number().integer().min(1).required()

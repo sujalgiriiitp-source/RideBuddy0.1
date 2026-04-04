@@ -4,6 +4,7 @@
  */
 
 const spacing = {
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 12,
@@ -12,7 +13,22 @@ const spacing = {
   '2xl': 24,
   '3xl': 32,
   '4xl': 40,
-  '5xl': 48
+  '5xl': 48,
+  '6xl': 56,
+  '7xl': 64,
+  '8xl': 80
+};
+
+// Responsive spacing helpers
+const spacingHelpers = {
+  screenPadding: 16,
+  cardGap: 12,
+  sectionGap: 24,
+  componentGap: 8,
+  iconMargin: 8,
+  inputPadding: 12,
+  buttonPadding: 16,
+  safeAreaInset: 20
 };
 
 const radius = {
@@ -48,14 +64,28 @@ const typography = {
 };
 
 const shadows = {
-  none: { shadowColor: 'transparent', shadowOpacity: 0, elevation: 0 },
-  xs: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, elevation: 2 },
-  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, elevation: 4 },
-  soft: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, elevation: 6 },
-  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, elevation: 8 },
-  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, elevation: 12 },
-  xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, elevation: 16 },
+  none: { shadowColor: 'transparent', shadowOpacity: 0, elevation: 0, shadowRadius: 0 },
+  xs: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 4 },
+  soft: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 6 },
+  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
+  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 12 },
+  xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 16 },
+  '2xl': { shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 32, elevation: 20 },
   strong: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 7 }
+};
+
+// Material Design Elevation System (dp values)
+const elevation = {
+  '0dp': { shadowColor: 'transparent', shadowOpacity: 0, elevation: 0, shadowRadius: 0 },
+  '1dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 1.5, elevation: 1 },
+  '2dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.14, shadowRadius: 2, elevation: 2 },
+  '4dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.14, shadowRadius: 4, elevation: 4 },
+  '6dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.16, shadowRadius: 6, elevation: 6 },
+  '8dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 8, elevation: 8 },
+  '12dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 12 },
+  '16dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 16, elevation: 16 },
+  '24dp': { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 24 }
 };
 
 const gradients = {
@@ -72,16 +102,31 @@ const gradients = {
   softSurface: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.75)'],
   fab: ['#2563EB', '#4F46E5'],
   glassLight: ['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.08)'],
-  glassDark: ['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.15)']
+  glassDark: ['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.15)'],
+  
+  // New gradient combinations for ride cards
+  sunset: ['#F59E0B', '#DC2626'],
+  ocean: ['#06B6D4', '#2563EB'],
+  forest: ['#10B981', '#059669'],
+  twilight: ['#6366F1', '#7C3AED'],
+  rose: ['#FB7185', '#EC4899'],
+  amber: ['#FBBF24', '#F59E0B'],
+  
+  // Ride status gradients
+  pending: ['#94A3B8', '#64748B'],
+  active: ['#22c55e', '#16a34a'],
+  completed: ['#06B6D4', '#0891B2']
 };
 
 const animation = {
   duration: {
+    instant: 100,
     fast: 150,
     base: 200,
     slow: 300,
     slower: 400,
-    slowest: 500
+    slowest: 500,
+    gentle: 600
   },
   easing: {
     ease: 'ease',
@@ -89,7 +134,15 @@ const animation = {
     easeOut: 'ease-out',
     easeInOut: 'ease-in-out',
     cubic: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    smooth: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+    smooth: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+    spring: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+    bounce: 'cubic-bezier(0.68, -0.6, 0.32, 1.6)'
+  },
+  spring: {
+    gentle: { friction: 8, tension: 40 },
+    default: { friction: 8, tension: 100 },
+    snappy: { friction: 6, tension: 120 },
+    bouncy: { friction: 4, tension: 100 }
   }
 };
 
@@ -112,9 +165,11 @@ const zIndex = {
 
 export default {
   spacing,
+  spacingHelpers,
   radius,
   typography,
   shadows,
+  elevation,
   gradients,
   animation,
   transitions,
