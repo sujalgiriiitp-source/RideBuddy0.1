@@ -1,12 +1,11 @@
 require('dotenv').config();
 
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const routes = require('./src/routes');
-const connectDatabase = require('./src/config/database');
-const env = require('./src/config/env');
 const logger = require('./src/config/logger');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
 const notFound = require('./src/middleware/notFound');
@@ -33,9 +32,23 @@ app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);
 
+const connectDB = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      logger.warn('MONGO_URI is missing; starting without MongoDB connection');
+      return;
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    logger.info('MongoDB connected');
+  } catch (error) {
+    logger.error(`MongoDB connection error: ${error.message}`);
+  }
+};
+
 const startServer = async () => {
   try {
-    await connectDatabase();
+    await connectDB();
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, '0.0.0.0', () => {
