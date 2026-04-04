@@ -1,12 +1,16 @@
 require('dotenv').config();
 
+const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const { Server } = require('socket.io');
 const routes = require('./src/routes');
 const logger = require('./src/config/logger');
+const { setSocketServer } = require('./src/config/socket');
+const setupRideTrackingSocket = require('./src/socket/rideTrackingSocket');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
 const notFound = require('./src/middleware/notFound');
 const errorHandler = require('./src/middleware/errorHandler');
@@ -58,8 +62,21 @@ const startServer = async () => {
     await connectDB();
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = http.createServer(app);
+
+    const io = new Server(server, {
+      cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+      }
+    });
+
+    setSocketServer(io);
+    setupRideTrackingSocket(io);
+
+    server.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server running on port ${PORT}`);
+      logger.info('Socket.io tracking server initialized');
     });
   } catch (error) {
     logger.error(error.message);

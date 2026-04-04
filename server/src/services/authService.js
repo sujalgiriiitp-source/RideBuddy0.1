@@ -2,14 +2,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { StatusCodes } = require('http-status-codes');
 const User = require('../models/User');
+const Driver = require('../models/Driver');
 const env = require('../config/env');
 const ApiError = require('../utils/ApiError');
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, env.jwtSecret, { expiresIn: '7d' });
+const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, env.jwtSecret, { expiresIn: '7d' });
 };
 
-const signup = async ({ name, email, password, phone }) => {
+const signup = async ({ name, email, password, phone, role = 'user' }) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new ApiError(StatusCodes.CONFLICT, 'Email is already in use');
@@ -23,10 +24,19 @@ const signup = async ({ name, email, password, phone }) => {
     name,
     email,
     password: hashedPassword,
+    role,
     phone: normalizedPhone
   });
 
-  const token = generateToken(user._id);
+  if (user.role === 'driver') {
+    await Driver.findOneAndUpdate(
+      { user: user._id },
+      { $setOnInsert: { user: user._id, isAvailable: true } },
+      { upsert: true, new: true }
+    );
+  }
+
+  const token = generateToken(user._id, user.role);
 
   return {
     token,
@@ -34,6 +44,7 @@ const signup = async ({ name, email, password, phone }) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       phone: user.phone,
       createdAt: user.createdAt
     }
@@ -51,7 +62,7 @@ const login = async ({ email, password }) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid email or password');
   }
 
-  const token = generateToken(user._id);
+  const token = generateToken(user._id, user.role);
 
   return {
     token,
@@ -59,6 +70,7 @@ const login = async ({ email, password }) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       phone: user.phone,
       createdAt: user.createdAt
     }

@@ -32,8 +32,27 @@ const joinRide = asyncHandler(async (req, res) => {
   return sendResponse(res, StatusCodes.OK, true, 'Ride joined successfully', result);
 });
 
+const acceptRide = asyncHandler(async (req, res) => {
+  const ride = await rideService.acceptRide({
+    rideId: req.body.rideId,
+    driverUserId: req.user._id
+  });
+
+  return sendResponse(res, StatusCodes.OK, true, 'Ride accepted successfully', ride);
+});
+
+const getRideStatus = asyncHandler(async (req, res) => {
+  const status = await rideService.getRideStatus({
+    rideId: req.query.rideId || req.body.rideId
+  });
+
+  return sendResponse(res, StatusCodes.OK, true, 'Ride status fetched successfully', status);
+});
+
 module.exports = {
   createRide,
+  acceptRide,
+  getRideStatus,
   getRides,
   getRideById,
   joinRide

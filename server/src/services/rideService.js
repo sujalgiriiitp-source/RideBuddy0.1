@@ -1,18 +1,49 @@
 const { StatusCodes } = require('http-status-codes');
 const Ride = require('../models/Ride');
 const Booking = require('../models/Booking');
+const Driver = require('../models/Driver');
+const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
+const { getSocketServer } = require('../config/socket');
 
-const createRide = async ({ userId, source, destination, dateTime, price, seatsAvailable }) => {
-  return Ride.create({
+const rideRoom = (rideId) => `ride:${rideId}`;
+
+const emitRideEvent = (rideId, eventName, payload) => {
+  const io = getSocketServer();
+  if (!io) {
+    return;
+  }
+
+  io.to(rideRoom(rideId)).emit(eventName, payload);
+};
+
+const createRide = async ({ userId, pickup, drop, source, destination, dateTime, price, seatsAvailable }) => {
+  const resolvedPickup = pickup || source;
+  const resolvedDrop = drop || destination;
+
+  const ride = await Ride.create({
+    pickup: resolvedPickup,
+    drop: resolvedDrop,
+    user: userId,
+    status: 'pending',
     createdBy: userId,
-    source,
-    destination,
+    source: resolvedPickup,
+    destination: resolvedDrop,
     dateTime,
     price,
     seatsAvailable,
     passengers: []
   });
+
+  emitRideEvent(ride._id, 'ride:status:update', {
+    rideId: ride._id,
+    status: ride.status,
+    pickup: ride.pickup,
+    drop: ride.drop,
+    updatedAt: ride.updatedAt
+  });
+
+  return ride;
 };
 
 const getRides = async ({ source, destination, date }) => {
@@ -45,7 +76,9 @@ const getRides = async ({ source, destination, date }) => {
 
 const getRideById = async (rideId) => {
   const ride = await Ride.findById(rideId)
-    .populate('createdBy', 'name email phone')
+    .populate('createdBy', 'name email phone role')
+    .populate('user', 'name email phone role')
+    .populate('driver', 'name email phone role')
     .populate('passengers', 'name email');
 
   if (!ride) {
@@ -53,6 +86,123 @@ const getRideById = async (rideId) => {
   }
 
   return ride;
+};
+
+const acceptRide = async ({ rideId, driverUserId }) => {
+  const driverUser = await User.findById(driverUserId).select('role');
+  if (!driverUser || !['driver', 'admin'].includes(driverUser.role)) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only drivers or admins can accept rides');
+  }
+
+  await Driver.findOneAndUpdate(
+    { user: driverUserId },
+    { $setOnInsert: { user: driverUserId, isAvailable: true } },
+    { upsert: true, new: true }
+  );
+
+  const ride = await Ride.findById(rideId);
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  if (ride.status !== 'pending') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, `Ride is already ${ride.status}`);
+  }
+
+  const updatedRide = await Ride.findByIdAndUpdate(
+    rideId,
+    {
+      $set: {
+        driver: driverUserId,
+        status: 'accepted'
+      }
+    },
+    { new: true }
+  )
+    .populate('user', 'name email phone role')
+    .populate('driver', 'name email phone role');
+
+  emitRideEvent(rideId, 'ride:status:update', {
+    rideId,
+    status: updatedRide.status,
+    driver: updatedRide.driver,
+    updatedAt: updatedRide.updatedAt
+  });
+
+  return updatedRide;
+};
+
+const getRideStatus = async ({ rideId }) => {
+  const ride = await Ride.findById(rideId).select('status pickup drop source destination user driver createdAt updatedAt');
+
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  return {
+    rideId: ride._id,
+    status: ride.status,
+    pickup: ride.pickup || ride.source,
+    drop: ride.drop || ride.destination,
+    user: ride.user,
+    driver: ride.driver,
+    lastLocation: ride.lastLocation || null,
+    createdAt: ride.createdAt,
+    updatedAt: ride.updatedAt
+  };
+};
+
+const updateRideLocation = async ({ rideId, driverUserId, latitude, longitude, heading, speed }) => {
+  if (!rideId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
+  }
+
+  if (latitude === undefined || longitude === undefined) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'latitude and longitude are required');
+  }
+
+  const ride = await Ride.findById(rideId).populate('driver', '_id role');
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  if (ride.status === 'completed') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride is already completed');
+  }
+
+  if (!ride.driver || String(ride.driver._id || ride.driver) !== String(driverUserId)) {
+    const actor = await User.findById(driverUserId).select('role');
+    const isAdmin = actor?.role === 'admin';
+
+    if (!isAdmin) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Only the assigned driver can update location');
+    }
+  }
+
+  const updatedRide = await Ride.findByIdAndUpdate(
+    rideId,
+    {
+      $set: {
+        lastLocation: {
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+          heading: heading !== undefined ? Number(heading) : undefined,
+          speed: speed !== undefined ? Number(speed) : undefined,
+          updatedAt: new Date()
+        }
+      }
+    },
+    { new: true }
+  ).select('status user driver lastLocation updatedAt');
+
+  emitRideEvent(rideId, 'ride:location:update', {
+    rideId,
+    status: updatedRide.status,
+    lastLocation: updatedRide.lastLocation,
+    updatedAt: updatedRide.updatedAt
+  });
+
+  return updatedRide;
 };
 
 const joinRide = async ({ rideId, userId, seatsBooked }) => {
@@ -122,6 +272,9 @@ const joinRide = async ({ rideId, userId, seatsBooked }) => {
 
 module.exports = {
   createRide,
+  acceptRide,
+  getRideStatus,
+  updateRideLocation,
   getRides,
   getRideById,
   joinRide

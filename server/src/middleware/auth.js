@@ -28,4 +28,19 @@ const auth = async (req, res, next) => {
   }
 };
 
+const authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Authentication required'));
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(new ApiError(StatusCodes.FORBIDDEN, 'You are not allowed to perform this action'));
+    }
+
+    return next();
+  };
+};
+
 module.exports = auth;
+module.exports.authorizeRoles = authorizeRoles;

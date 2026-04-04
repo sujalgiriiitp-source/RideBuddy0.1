@@ -1,7 +1,11 @@
+const http = require('http');
+const { Server } = require('socket.io');
 const app = require('./app');
 const env = require('./config/env');
 const logger = require('./config/logger');
 const connectDatabase = require('./config/database');
+const { setSocketServer } = require('./config/socket');
+const setupRideTrackingSocket = require('./socket/rideTrackingSocket');
 
 const startServer = async () => {
   try {
@@ -11,8 +15,20 @@ const startServer = async () => {
 
     await connectDatabase();
     const port = Number(process.env.PORT) || env.port || 5002;
+
     const server = await new Promise((resolve, reject) => {
-      const httpServer = app.listen(port, () => resolve(httpServer));
+      const httpServer = http.createServer(app);
+      const io = new Server(httpServer, {
+        cors: {
+          origin: '*',
+          methods: ['GET', 'POST']
+        }
+      });
+
+      setSocketServer(io);
+      setupRideTrackingSocket(io);
+
+      httpServer.listen(port, () => resolve(httpServer));
       httpServer.on('error', (error) => reject(error));
     }).catch((error) => {
       if (error.code === 'EADDRINUSE') {
@@ -23,6 +39,7 @@ const startServer = async () => {
     });
 
     logger.info(`Server running on port ${port}`);
+  logger.info('Socket.io tracking server initialized');
 
     const gracefulShutdown = (signal) => {
       logger.info(`Received ${signal}. Shutting down server...`);
