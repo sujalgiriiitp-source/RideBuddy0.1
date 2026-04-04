@@ -18,6 +18,10 @@ const authLimiter = rateLimit({
   max: isDevelopment ? 10000 : 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+  validate: {
+    xForwardedForHeader: false
+  },
   skipSuccessfulRequests: isDevelopment,
   skip: () => isDevelopment,
   handler: buildLimiterHandler('Too many authentication attempts. Please try again later.')
@@ -28,6 +32,10 @@ const apiLimiter = rateLimit({
   max: isDevelopment ? 5000 : 200,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+  validate: {
+    xForwardedForHeader: false
+  },
   skip: () => isDevelopment,
   handler: buildLimiterHandler('Too many requests. Please try again later.')
 });
