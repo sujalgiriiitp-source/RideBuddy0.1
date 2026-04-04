@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,30 @@ const CreateRideScreen = () => {
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const normalizeDateInput = (value) => {
+    const raw = String(value || '').trim();
+
+    if (!raw) {
+      return '';
+    }
+
+    return raw.replace(' ', 'T');
+  };
+
+  const toIsoDateTime = (value) => {
+    const normalized = normalizeDateInput(value);
+    if (!normalized) {
+      return '';
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) {
+      return '';
+    }
+
+    return parsed.toISOString();
+  };
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -34,11 +58,10 @@ const CreateRideScreen = () => {
       nextErrors.destination = 'Destination is required';
     }
 
-    const parsedDate = new Date(dateTime);
     if (!dateTime) {
-      nextErrors.dateTime = 'Date & time are required';
-    } else if (Number.isNaN(parsedDate.getTime())) {
-      nextErrors.dateTime = 'Enter valid ISO datetime';
+      nextErrors.dateTime = 'Please select date & time';
+    } else if (!toIsoDateTime(dateTime)) {
+      nextErrors.dateTime = 'Please select date & time';
     }
 
     if (!Number.isFinite(price) || price <= 0) {
@@ -56,7 +79,8 @@ const CreateRideScreen = () => {
   const handleCreate = async () => {
     const source = form.source.trim();
     const destination = form.destination.trim();
-    const dateTime = form.dateTime.trim();
+    const dateTime = normalizeDateInput(form.dateTime);
+    const isoDateTime = toIsoDateTime(dateTime);
     const price = Number(form.price);
     const seatsAvailable = Number(form.seatsAvailable);
 
@@ -73,7 +97,7 @@ const CreateRideScreen = () => {
       }
 
       if (__DEV__) {
-        console.log('[CreateRide] Posting ride', { source, destination, dateTime, price, seatsAvailable });
+        console.log('[CreateRide] Posting ride', { source, destination, dateTime: isoDateTime, price, seatsAvailable });
       }
 
       await apiRequest('/rides', {
@@ -82,7 +106,7 @@ const CreateRideScreen = () => {
         body: {
           source,
           destination,
-          dateTime,
+          dateTime: isoDateTime,
           price,
           seatsAvailable
         }
@@ -107,13 +131,33 @@ const CreateRideScreen = () => {
             </View>
             <View>
               <Text style={styles.title}>Create Ride</Text>
-              <Text style={styles.subtitle}>Use ISO datetime, e.g. 2026-04-10T16:00:00.000Z</Text>
+              <Text style={styles.subtitle}>Select a date and time to publish your ride.</Text>
             </View>
           </View>
 
           <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
           <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} icon="location-outline" />
-          <InputField label="Date & Time (ISO)" value={form.dateTime} onChangeText={(value) => setField('dateTime', value)} placeholder="2026-04-10T16:00:00.000Z" error={errors.dateTime} icon="calendar-outline" />
+          {Platform.OS === 'web' ? (
+            <View style={styles.webDateWrap}>
+              <Text style={styles.webDateLabel}>Date & Time</Text>
+              <input
+                type="datetime-local"
+                value={form.dateTime}
+                onChange={(event) => setField('dateTime', event.target.value)}
+                style={styles.webDateInput}
+              />
+              {!!errors.dateTime && <Text style={styles.webDateError}>{errors.dateTime}</Text>}
+            </View>
+          ) : (
+            <InputField
+              label="Date & Time"
+              value={form.dateTime}
+              onChangeText={(value) => setField('dateTime', value)}
+              placeholder="YYYY-MM-DD HH:mm"
+              error={errors.dateTime}
+              icon="calendar-outline"
+            />
+          )}
           <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" />
           <InputField
             label="Seats Available"
@@ -180,6 +224,36 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     lineHeight: 20,
     maxWidth: 260
+  },
+  webDateWrap: {
+    marginBottom: 16
+  },
+  webDateLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.mutedText,
+    marginBottom: 8,
+    marginLeft: 2
+  },
+  webDateInput: {
+    width: '100%',
+    height: 52,
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: '#D9E3F8',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: 500,
+    padding: '0 14px',
+    outline: 'none'
+  },
+  webDateError: {
+    marginTop: 7,
+    marginLeft: 2,
+    color: colors.danger,
+    fontSize: 12,
+    fontWeight: '600'
   }
 });
 
