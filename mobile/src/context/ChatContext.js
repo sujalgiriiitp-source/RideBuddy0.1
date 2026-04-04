@@ -4,9 +4,6 @@ import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
 
-// Web fallback: limit Socket.io features
-const isWeb = Platform.OS === 'web';
-
 const ChatContext = createContext({
   socket: null,
   conversations: [],
@@ -25,29 +22,32 @@ export const useChatContext = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const reconnectTimer = useRef(null);
+  const hasTriedRootFallback = useRef(false);
 
-  // Initialize socket connection
-  useEffect(() => {
-    if (!user) return;
-    
-    // Web: Skip WebSocket if needed (or use with caution)
-    if (isWeb) {
-      console.log('Chat WebSocket limited on web');
-      // Could still enable but with fallback handling
-    }
-
-    const chatSocket = io(`${API_URL}/chat`, {
+  const buildSocket = (url) =>
+    io(url, {
       transports: ['websocket'],
+      auth: token ? { token } : undefined,
+      timeout: 10000,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
     });
+
+  // Initialize socket connection
+  useEffect(() => {
+    if (!user) return;
+
+    const namespacedSocketUrl = `${API_URL}/chat`;
+    console.log('[ChatContext] Connecting socket', { socketUrl: namespacedSocketUrl, platform: Platform.OS });
+
+    let chatSocket = buildSocket(namespacedSocketUrl);
 
     chatSocket.on('connect', () => {
       console.log('Chat socket connected');
@@ -60,7 +60,41 @@ export const ChatProvider = ({ children }) => {
     });
 
     chatSocket.on('connect_error', (error) => {
-      console.error('Chat socket connection error:', error);
+      console.log('Chat socket connection error:', error?.message || error);
+      console.log(error);
+
+      const isInvalidNamespace = String(error?.message || '').toLowerCase().includes('invalid namespace');
+      if (isInvalidNamespace && !hasTriedRootFallback.current) {
+        hasTriedRootFallback.current = true;
+        console.log('[ChatContext] /chat namespace unavailable, retrying root namespace');
+        chatSocket.disconnect();
+
+        const fallbackSocket = buildSocket(API_URL);
+
+        fallbackSocket.on('connect', () => {
+          console.log('Chat socket connected (root fallback namespace)');
+          setIsConnected(true);
+        });
+
+        fallbackSocket.on('disconnect', () => {
+          setIsConnected(false);
+        });
+
+        fallbackSocket.on('connect_error', (fallbackError) => {
+          console.log('Chat socket root fallback error:', fallbackError?.message || fallbackError);
+        });
+
+        fallbackSocket.on('chat:message:new', (data) => {
+          handleNewMessage(data.message);
+        });
+
+        fallbackSocket.on('chat:message:read', (data) => {
+          handleMessageRead(data);
+        });
+
+        chatSocket = fallbackSocket;
+        setSocket(fallbackSocket);
+      }
     });
 
     // Listen for new messages
@@ -77,11 +111,12 @@ export const ChatProvider = ({ children }) => {
 
     return () => {
       chatSocket.disconnect();
+      hasTriedRootFallback.current = false;
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
       }
     };
-  }, [user]);
+  }, [user, token]);
 
   // Handle new message
   const handleNewMessage = (message) => {

@@ -6,6 +6,11 @@ import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { apiRequest } from '../api';
 
+const palette = colors || {};
+const spacing = tokens?.spacing || { xxs: 2, xs: 4, sm: 8, md: 16 };
+const borderRadius = tokens?.borderRadius || tokens?.radius || { lg: 16 };
+const shadows = tokens?.shadows || {};
+
 /**
  * PlaceAutocomplete Component
  * Search for places with Mapbox geocoding
@@ -105,12 +110,12 @@ const PlaceAutocomplete = ({
   return (
     <View style={[styles.container, style]}>
       <View style={[styles.inputContainer, isFocused && styles.inputFocused]}>
-        <Ionicons name="search" size={20} color={colors.textTertiary} style={styles.icon} />
+        <Ionicons name="search" size={20} color={palette.textTertiary || '#64748B'} style={styles.icon} />
         
         <TextInput
           style={styles.input}
           placeholder={placeholder}
-          placeholderTextColor={colors.textTertiary}
+          placeholderTextColor={palette.textTertiary || '#64748B'}
           value={query}
           onChangeText={setQuery}
           onFocus={() => setIsFocused(true)}
@@ -121,13 +126,13 @@ const PlaceAutocomplete = ({
 
         {query.length > 0 && (
           <Pressable onPress={clearQuery} style={styles.clearButton}>
-            <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+            <Ionicons name="close-circle" size={20} color={palette.textTertiary || '#64748B'} />
           </Pressable>
         )}
 
         {isLoading && (
           <View style={styles.loadingIndicator}>
-            <Ionicons name="hourglass-outline" size={16} color={colors.primary} />
+            <Ionicons name="hourglass-outline" size={16} color={palette.primary || '#2563EB'} />
           </View>
         )}
       </View>
@@ -145,7 +150,7 @@ const PlaceAutocomplete = ({
                 ]}
                 onPress={() => handleSelectPlace(item)}
               >
-                <Ionicons name="location" size={20} color={colors.primary} />
+                <Ionicons name="location" size={20} color={palette.primary || '#2563EB'} />
                 <View style={styles.suggestionText}>
                   <Text style={styles.suggestionName} numberOfLines={1}>
                     {item.shortName}
@@ -171,70 +176,88 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: tokens.borderRadius.lg,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
+    backgroundColor: palette.white || '#FFFFFF',
+    borderRadius: borderRadius.lg || 16,
+    paddingHorizontal: spacing.md || 16,
+    paddingVertical: spacing.sm || 8,
     borderWidth: 2,
-    borderColor: colors.border,
-    ...tokens.shadows.md
+    borderColor: palette.border || '#E2E8F0',
+    ...(shadows.md || {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 8
+    })
   },
   inputFocused: {
-    borderColor: colors.primary,
-    ...tokens.shadows.lg
+    borderColor: palette.primary || '#2563EB',
+    ...(shadows.lg || {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 16,
+      elevation: 12
+    })
   },
   icon: {
-    marginRight: tokens.spacing.sm
+    marginRight: spacing.sm || 8
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: colors.textPrimary,
+    color: palette.textPrimary || palette.text || '#0F172A',
     paddingVertical: 0
   },
   clearButton: {
-    padding: tokens.spacing.xxs,
-    marginLeft: tokens.spacing.xs
+    padding: spacing.xxs || 2,
+    marginLeft: spacing.xs || 4
   },
   loadingIndicator: {
-    marginLeft: tokens.spacing.xs
+    marginLeft: spacing.xs || 4
   },
   suggestionsContainer: {
     position: 'absolute',
     top: '100%',
     left: 0,
     right: 0,
-    marginTop: tokens.spacing.xs,
-    backgroundColor: colors.white,
-    borderRadius: tokens.borderRadius.lg,
+    marginTop: spacing.xs || 4,
+    backgroundColor: palette.white || '#FFFFFF',
+    borderRadius: borderRadius.lg || 16,
     maxHeight: 250,
-    ...tokens.shadows.xl,
+    ...(shadows.xl || {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.2,
+      shadowRadius: 24,
+      elevation: 16
+    }),
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: palette.border || '#E2E8F0'
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: tokens.spacing.md,
+    padding: spacing.md || 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border
+    borderBottomColor: palette.border || '#E2E8F0'
   },
   suggestionItemPressed: {
-    backgroundColor: colors.backgroundSecondary
+    backgroundColor: palette.backgroundSecondary || palette.backgroundAlt || '#F8FAFF'
   },
   suggestionText: {
     flex: 1,
-    marginLeft: tokens.spacing.sm
+    marginLeft: spacing.sm || 8
   },
   suggestionName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: palette.textPrimary || palette.text || '#0F172A',
     marginBottom: 2
   },
   suggestionAddress: {
     fontSize: 14,
-    color: colors.textSecondary
+    color: palette.textSecondary || '#475569'
   }
 });
 

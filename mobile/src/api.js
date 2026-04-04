@@ -69,7 +69,7 @@ export const apiRequest = async (path, options = {}) => {
     }
 
     if (error?.message?.includes('Failed to fetch') || error?.message?.includes('Network request failed')) {
-      throw new Error(`Unable to reach backend at ${API_BASE_URL}. Ensure phone and backend are on same Wi-Fi.`);
+      throw new Error(`Unable to reach backend at ${API_BASE_URL}. Check backend deployment and CORS settings.`);
     }
     throw new Error(error?.message || 'Network request failed');
   } finally {
