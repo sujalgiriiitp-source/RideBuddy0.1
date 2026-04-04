@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,7 @@ import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
 import { ProgressBar, SuccessAnimation } from '../components';
+import AnimatedReveal from '../components/AnimatedReveal';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -142,27 +143,14 @@ const CreateRideScreen = () => {
 
           <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
           <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} icon="location-outline" />
-          {Platform.OS === 'web' ? (
-            <View style={styles.webDateWrap}>
-              <Text style={styles.webDateLabel}>Date & Time</Text>
-              <input
-                type="datetime-local"
-                value={form.dateTime}
-                onChange={(event) => setField('dateTime', event.target.value)}
-                style={styles.webDateInput}
-              />
-              {!!errors.dateTime && <Text style={styles.webDateError}>{errors.dateTime}</Text>}
-            </View>
-          ) : (
-            <InputField
-              label="Date & Time"
-              value={form.dateTime}
-              onChangeText={(value) => setField('dateTime', value)}
-              placeholder="YYYY-MM-DD HH:mm"
-              error={errors.dateTime}
-              icon="calendar-outline"
-            />
-          )}
+          <InputField
+            label="Date & Time"
+            value={form.dateTime}
+            onChangeText={(value) => setField('dateTime', value)}
+            placeholder="YYYY-MM-DD HH:mm"
+            error={errors.dateTime}
+            icon="calendar-outline"
+          />
           <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" />
           <InputField
             label="Seats Available"
@@ -230,36 +218,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     maxWidth: 260
   },
-  webDateWrap: {
-    marginBottom: 16
-  },
-  webDateLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.mutedText,
-    marginBottom: 8,
-    marginLeft: 2
-  },
-  webDateInput: {
-    width: '100%',
-    height: 52,
-    borderRadius: tokens.radius.lg,
-    borderWidth: 1,
-    borderColor: '#D9E3F8',
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: 500,
-    padding: '0 14px',
-    outline: 'none'
-  },
-  webDateError: {
-    marginTop: 7,
-    marginLeft: 2,
-    color: colors.danger,
-    fontSize: 12,
-    fontWeight: '600'
-  }
+
 });
 
 export default CreateRideScreen;

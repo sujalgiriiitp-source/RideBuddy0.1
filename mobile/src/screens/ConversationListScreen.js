@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { useChatContext } from '../context/ChatContext';
@@ -23,8 +24,11 @@ const ConversationList = ({ navigation }) => {
 
   const loadConversations = async () => {
     try {
-      const response = await apiRequest('/chat/conversations', {
-        method: 'GET'
+      const token = await AsyncStorage.getItem('token');
+
+      const response = await apiRequest('/conversations', {
+        method: 'GET',
+        token
       });
 
       if (response.conversations) {
