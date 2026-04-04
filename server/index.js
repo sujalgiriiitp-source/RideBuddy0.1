@@ -20,6 +20,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use('/api', apiLimiter);
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '🚀 RideBuddy API is LIVE'
+  });
+});
+
 app.get('/api', (req, res) => {
   res.status(200).json({ success: true });
 });
