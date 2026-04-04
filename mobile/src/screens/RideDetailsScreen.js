@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -7,7 +8,9 @@ import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
+import AnimatedReveal from '../components/AnimatedReveal';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const formatDisplayDate = (value) => {
   if (!value) {
@@ -104,31 +107,36 @@ const RideDetailsScreen = ({ route }) => {
   return (
     <SafeAreaView style={styles.safe}>
       <ScreenContainer>
-        <View style={styles.heroCard}>
-          <Text style={styles.route}>{ride.source || ride.from} → {ride.destination || ride.to}</Text>
-          <View style={styles.metaRow}>
-            <Ionicons name="time-outline" size={16} color={colors.mutedText} />
-            <Text style={styles.meta}>{formatDisplayDate(ride.dateTime || ride.date)}</Text>
-          </View>
-          <View style={styles.statsRow}>
-            <Text style={styles.price}>₹{ride.price ?? 0}</Text>
-            <View style={styles.seatBadge}>
-              <Text style={styles.seatText}>{ride.seatsAvailable ?? ride.availableSeats ?? 0} seats left</Text>
+        <AnimatedReveal>
+          <View style={styles.heroCard}>
+            <LinearGradient colors={['rgba(37,99,235,0.15)', 'rgba(124,58,237,0.1)']} style={styles.heroGlow} />
+            <Text style={styles.route}>{ride.source || ride.from} → {ride.destination || ride.to}</Text>
+            <View style={styles.metaRow}>
+              <Ionicons name="time-outline" size={16} color={colors.mutedText} />
+              <Text style={styles.meta}>{formatDisplayDate(ride.dateTime || ride.date)}</Text>
+            </View>
+            <View style={styles.statsRow}>
+              <Text style={styles.price}>₹{ride.price ?? 0}</Text>
+              <View style={styles.seatBadge}>
+                <Text style={styles.seatText}>{ride.seatsAvailable ?? ride.availableSeats ?? 0} seats left</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </AnimatedReveal>
 
         <View style={styles.divider} />
 
-        <View style={styles.driverCard}>
-          <View style={styles.metaRow}>
-            <Ionicons name="person-circle-outline" size={22} color={colors.primary} />
-            <View>
-              <Text style={styles.driverTitle}>Driver Info</Text>
-              <Text style={styles.driverName}>{ride?.createdBy?.name || 'Unknown Driver'}</Text>
+        <AnimatedReveal delay={110}>
+          <View style={styles.driverCard}>
+            <View style={styles.metaRow}>
+              <Ionicons name="person-circle-outline" size={22} color={colors.primary} />
+              <View>
+                <Text style={styles.driverTitle}>Driver Info</Text>
+                <Text style={styles.driverName}>{ride?.createdBy?.name || 'Unknown Driver'}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </AnimatedReveal>
 
         <InputField
           label="Seats to book"
@@ -136,6 +144,7 @@ const RideDetailsScreen = ({ route }) => {
           onChangeText={setSeatsBooked}
           keyboardType="numeric"
           placeholder="1"
+          icon="people-outline"
         />
       </ScreenContainer>
 
@@ -144,6 +153,7 @@ const RideDetailsScreen = ({ route }) => {
           title="Join Ride 🚀"
           onPress={handleJoin}
           loading={joining}
+          icon="arrow-forward-circle-outline"
           disabled={joining || !seatsBooked.trim() || Number(ride.seatsAvailable ?? ride.availableSeats ?? 0) <= 0}
         />
       </View>
@@ -162,20 +172,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   heroCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#D9E4FA',
     padding: 18,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    overflow: 'hidden',
+    ...tokens.shadows.soft,
     marginBottom: 16
   },
+  heroGlow: {
+    position: 'absolute',
+    left: -10,
+    right: -10,
+    top: -10,
+    height: 90,
+    borderRadius: tokens.radius.xl
+  },
   route: {
-    fontSize: 26,
+    fontSize: tokens.typography.h1,
     fontWeight: '800',
     color: colors.text,
     marginBottom: 12
@@ -216,12 +231,13 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   driverCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#D9E4FA',
     padding: 16,
-    marginBottom: 16
+    marginBottom: 16,
+    ...tokens.shadows.soft
   },
   driverTitle: {
     fontSize: 13,
@@ -235,10 +251,10 @@ const styles = StyleSheet.create({
   },
   footerCta: {
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: '#DCE6F8',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#fff'
+    backgroundColor: 'rgba(255,255,255,0.9)'
   }
 });
 

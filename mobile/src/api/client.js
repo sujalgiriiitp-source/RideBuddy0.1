@@ -17,6 +17,10 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
+    if (!API_BASE_URL) {
+      throw new Error('Missing API URL. Set EXPO_PUBLIC_API_URL in mobile/.env to http://<LOCAL_IP>:5002/api');
+    }
+
     if (tokenGetter) {
       const token = await tokenGetter();
       if (token) {
@@ -33,7 +37,9 @@ api.interceptors.response.use(
   (error) => {
     const message =
       error?.response?.data?.message ||
-      (error.code === 'ECONNABORTED' ? 'Request timeout. Please try again.' : 'Network error. Please check your internet.');
+      (error.code === 'ECONNABORTED'
+        ? 'Request timeout. Please try again.'
+        : `Unable to reach backend at ${API_BASE_URL}. Ensure phone and backend are on same Wi-Fi.`);
 
     Toast.show({
       type: 'error',

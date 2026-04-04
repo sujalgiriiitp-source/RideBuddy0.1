@@ -1,19 +1,24 @@
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const ScreenContainer = ({ children, scroll = true, refreshControl }) => {
   const Wrapper = scroll ? ScrollView : View;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Wrapper
-        style={styles.container}
-        contentContainerStyle={scroll ? styles.content : undefined}
-        refreshControl={scroll ? refreshControl : undefined}
-      >
-        {children}
-      </Wrapper>
+      <LinearGradient colors={[colors.background, colors.backgroundAlt]} style={styles.gradient}>
+        <Wrapper
+          style={styles.container}
+          contentContainerStyle={scroll ? styles.content : undefined}
+          refreshControl={scroll ? refreshControl : undefined}
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </Wrapper>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -23,13 +28,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background
   },
+  gradient: {
+    flex: 1
+  },
   container: {
     flex: 1
   },
   content: {
     flexGrow: 1,
-    padding: 16,
-    paddingBottom: 24
+    paddingHorizontal: tokens.spacing.md,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xl
   }
 });
 

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
+import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -75,11 +78,12 @@ const SignupScreen = () => {
 
   return (
     <ScreenContainer>
+      <AnimatedReveal>
       <View style={styles.heroCard}>
         <View style={styles.brandRow}>
-          <View style={styles.logoBubble}>
+          <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
             <Ionicons name="car-sport" size={20} color="#FFFFFF" />
-          </View>
+          </LinearGradient>
           <View>
             <Text style={styles.brandTitle}>RideBuddy</Text>
             <Text style={styles.brandSub}>Create your rider account</Text>
@@ -96,6 +100,7 @@ const SignupScreen = () => {
             onChangeText={(value) => setField('name', value)}
             placeholder="Enter your full name"
             autoCapitalize="words"
+            icon="person-outline"
             error={errors.name}
           />
           <InputField
@@ -104,6 +109,7 @@ const SignupScreen = () => {
             onChangeText={(value) => setField('email', value)}
             placeholder="you@example.com"
             keyboardType="email-address"
+            icon="mail-outline"
             error={errors.email}
           />
           <InputField
@@ -112,18 +118,21 @@ const SignupScreen = () => {
             onChangeText={(value) => setField('password', value)}
             placeholder="Minimum 6 characters"
             secureTextEntry
+            icon="lock-closed-outline"
             error={errors.password}
           />
-          <InputField label="Phone (optional)" value={form.phone} onChangeText={(value) => setField('phone', value)} placeholder="98XXXXXXXX" keyboardType="phone-pad" />
+          <InputField label="Phone (optional)" value={form.phone} onChangeText={(value) => setField('phone', value)} placeholder="98XXXXXXXX" keyboardType="phone-pad" icon="call-outline" />
           <CustomButton
             title="Create Account"
             onPress={handleSignup}
             loading={loading}
+            icon="sparkles-outline"
             disabled={loading || !form.name.trim() || !form.email.trim() || !form.password}
             style={styles.cta}
           />
         </View>
       </View>
+      </AnimatedReveal>
     </ScreenContainer>
   );
 };
@@ -142,15 +151,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#0A84FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4
+    ...tokens.shadows.strong
   },
   brandTitle: {
     fontSize: 17,
@@ -164,7 +168,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   title: {
-    fontSize: 32,
+    fontSize: tokens.typography.hero,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.3
@@ -177,16 +181,12 @@ const styles = StyleSheet.create({
     lineHeight: 21
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: '#E6EAF0',
+    borderColor: '#D9E4FA',
     padding: 18,
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5
+    ...tokens.shadows.soft
   },
   cta: {
     marginTop: 4

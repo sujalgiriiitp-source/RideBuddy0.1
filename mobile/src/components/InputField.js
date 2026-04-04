@@ -1,6 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const InputField = ({
   label,
@@ -14,23 +16,51 @@ const InputField = ({
   error,
   style,
   inputStyle,
+  icon,
   ...rest
 }) => {
   const [focused, setFocused] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
+  const lift = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  const shouldLift = focused || !!value;
+
+  useEffect(() => {
+    Animated.timing(lift, {
+      toValue: shouldLift ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false
+    }).start();
+  }, [lift, shouldLift]);
 
   const animate = (nextFocused) => {
     setFocused(nextFocused);
-    Animated.timing(scale, {
-      toValue: nextFocused ? 1.01 : 1,
-      duration: 140,
-      useNativeDriver: true
-    }).start();
+    Animated.parallel([
+      Animated.timing(scale, {
+        toValue: nextFocused ? 1.01 : 1,
+        duration: 140,
+        useNativeDriver: true
+      }),
+      Animated.timing(lift, {
+        toValue: nextFocused || !!value ? 1 : 0,
+        duration: 180,
+        useNativeDriver: false
+      })
+    ]).start();
+  };
+
+  const floatingLabelStyle = {
+    top: lift.interpolate({ inputRange: [0, 1], outputRange: [17, 6] }),
+    fontSize: lift.interpolate({ inputRange: [0, 1], outputRange: [15, 12] }),
+    color: focused
+      ? colors.primary
+      : shouldLift
+        ? colors.mutedText
+        : colors.lightText
   };
 
   return (
     <View style={[styles.wrapper, style]}>
-      {!!label && <Text style={styles.label}>{label}</Text>}
       <Animated.View
         style={[
           styles.shell,
@@ -39,11 +69,17 @@ const InputField = ({
           { transform: [{ scale }] }
         ]}
       >
+        {icon ? (
+          <View style={styles.iconWrap}>
+            <Ionicons name={icon} size={17} color={focused ? colors.primary : colors.mutedText} />
+          </View>
+        ) : null}
+        {!!label ? <Animated.Text style={[styles.floatingLabel, floatingLabelStyle]}>{label}</Animated.Text> : null}
         <TextInput
-          style={[styles.input, inputStyle]}
+          style={[styles.input, icon ? styles.inputWithIcon : undefined, inputStyle]}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder}
+          placeholder={focused ? placeholder : ''}
           placeholderTextColor="#9AA4B2"
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
@@ -63,38 +99,43 @@ const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 16
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#4B5563',
-    marginBottom: 8,
-    letterSpacing: 0.2
-  },
   shell: {
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
     borderWidth: 1,
-    borderColor: '#E6EAF0',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 3
+    borderColor: '#D9E3F8',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    minHeight: 58,
+    ...tokens.shadows.soft
   },
   shellFocused: {
     borderColor: colors.primary,
-    shadowOpacity: 0.12
+    shadowOpacity: 0.16
   },
   shellError: {
     borderColor: colors.danger,
     shadowOpacity: 0.08
   },
+  floatingLabel: {
+    position: 'absolute',
+    left: 16,
+    fontWeight: '700'
+  },
+  iconWrap: {
+    position: 'absolute',
+    left: 14,
+    top: 21,
+    zIndex: 2
+  },
   input: {
-    height: 54,
+    height: 58,
     paddingHorizontal: 16,
+    paddingTop: 22,
     fontSize: 15,
     fontWeight: '500',
     color: colors.text
+  },
+  inputWithIcon: {
+    paddingLeft: 40
   },
   errorText: {
     marginTop: 7,

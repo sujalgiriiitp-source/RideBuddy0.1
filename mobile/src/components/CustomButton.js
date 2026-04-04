@@ -1,6 +1,10 @@
-import React, { useRef } from 'react';
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const CustomButton = ({
   title,
@@ -8,22 +12,26 @@ const CustomButton = ({
   loading = false,
   disabled = false,
   variant = 'primary',
+  icon,
   style,
   textStyle
 }) => {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
   const isSecondary = variant === 'secondary';
   const isDanger = variant === 'danger';
   const isDisabled = loading || disabled;
 
   const animateTo = (toValue) => {
-    Animated.spring(scale, {
-      toValue,
-      useNativeDriver: true,
-      speed: 25,
-      bounciness: 5
-    }).start();
+    scale.value = withSpring(toValue, {
+      damping: 16,
+      stiffness: 220,
+      mass: 0.5
+    });
   };
+
+  const wrapAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
 
   const variantContainerStyle = isDanger
     ? styles.dangerButton
@@ -38,7 +46,7 @@ const CustomButton = ({
       : styles.primaryText;
 
   return (
-    <Animated.View style={[styles.wrap, { transform: [{ scale }] }, style]}>
+    <Animated.View style={[styles.wrap, wrapAnimatedStyle, style]}>
       <Pressable
         onPress={onPress}
         onPressIn={() => animateTo(0.985)}
@@ -46,10 +54,26 @@ const CustomButton = ({
         disabled={isDisabled}
         style={[styles.button, variantContainerStyle, isDisabled && styles.buttonDisabled]}
       >
-        {loading ? (
-          <ActivityIndicator color={isSecondary ? colors.primary : '#FFFFFF'} size="small" />
+        {isSecondary ? (
+          loading ? (
+            <ActivityIndicator color={colors.primary} size="small" />
+          ) : (
+            <>
+              {icon ? <Ionicons name={icon} size={18} color={colors.primary} /> : null}
+              <Text style={[styles.text, styles.secondaryText, textStyle]}>{title}</Text>
+            </>
+          )
         ) : (
-          <Text style={[styles.text, variantTextStyle, textStyle]}>{title}</Text>
+          <LinearGradient colors={isDanger ? ['#DC2626', '#B91C1C'] : tokens.gradients.primary} style={styles.gradientFill}>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                {icon ? <Ionicons name={icon} size={18} color="#FFFFFF" /> : null}
+                <Text style={[styles.text, variantTextStyle, textStyle]}>{title}</Text>
+              </>
+            )}
+          </LinearGradient>
         )}
       </Pressable>
     </Animated.View>
@@ -62,25 +86,33 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 54,
-    borderRadius: 16,
+    borderRadius: tokens.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  gradientFill: {
+    width: '100%',
+    height: '100%',
+    borderRadius: tokens.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 5
+    flexDirection: 'row',
+    gap: 8,
+    ...tokens.shadows.strong
   },
   primaryButton: {
-    backgroundColor: colors.primary
+    backgroundColor: 'transparent'
   },
   secondaryButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     borderWidth: 1,
-    borderColor: '#BFDBFE'
+    borderColor: '#D7E4FF',
+    flexDirection: 'row',
+    gap: 8,
+    ...tokens.shadows.soft
   },
   dangerButton: {
-    backgroundColor: colors.danger
+    backgroundColor: 'transparent'
   },
   buttonDisabled: {
     opacity: 0.72,
@@ -89,8 +121,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.2
+    fontWeight: '800'
   },
   primaryText: {
     color: '#FFFFFF'

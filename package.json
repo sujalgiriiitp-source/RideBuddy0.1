@@ -2,15 +2,8 @@
   "name": "ridebuddy-monorepo",
   "private": true,
   "scripts": {
-    "start": "npm run frontend:start",
-    "backend:dev": "npm --prefix server run dev",
-    "backend:start": "npm --prefix server run start",
-    "frontend:start": "npm --prefix mobile run start",
-    "frontend:android": "npm --prefix mobile run android",
-    "frontend:ios": "npm --prefix mobile run ios",
-    "dev:all": "concurrently --continue-on-error --restart-tries 5 --restart-after 3000 --names backend,frontend --prefix-colors blue,magenta \"npm run backend:dev\" \"npm run frontend:start\""
+    "start": "node server/index.js",
+    "dev": "npm --prefix server run dev"
   },
-  "devDependencies": {
-    "concurrently": "^9.0.1"
-  }
+  "devDependencies": {}
 }

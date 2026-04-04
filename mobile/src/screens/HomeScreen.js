@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import RideCard from '../components/RideCard';
+import AnimatedReveal from '../components/AnimatedReveal';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const HomeScreen = ({ navigation }) => {
   const [rides, setRides] = useState([]);
@@ -68,25 +71,25 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.page}>
       <ScreenContainer refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={styles.heroCard}>
-        <View style={styles.topRow}>
-          <View>
-            <Text style={styles.topLabel}>Good day</Text>
-            <Text style={styles.title}>Find your next ride</Text>
+          <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
+          <View style={styles.topRow}>
+            <View>
+              <Text style={styles.topLabel}>Good Morning, Sujal</Text>
+              <Text style={styles.title}>Find your next ride</Text>
+            </View>
+            <View style={styles.mapIconWrap}>
+              <Ionicons name="location" size={20} color="#FFFFFF" />
+            </View>
           </View>
-          <View style={styles.mapIconWrap}>
-            <Ionicons name="location" size={20} color="#FFFFFF" />
-          </View>
-        </View>
 
-        <View style={styles.searchWrap}>
-          <Ionicons name="search-outline" size={18} color="#8C98A8" />
-          <TextInput
-            placeholder="Where to?"
-            placeholderTextColor="#9AA4B2"
-            style={styles.searchInput}
-            editable={false}
-          />
-        </View>
+          <View style={styles.searchWrap}>
+            <Ionicons name="search-outline" size={18} color="#8C98A8" />
+            <TextInput
+              placeholder="Search routes, destination, pickup"
+              placeholderTextColor="#9AA4B2"
+              style={styles.searchInput}
+            />
+          </View>
         </View>
 
         <View style={styles.sectionHead}>
@@ -101,25 +104,30 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.emptySub}>Pull to refresh or tap Create Ride.</Text>
           </View>
         ) : (
-          rides.map((ride) => (
+          rides.map((ride, index) => (
             <RideCard
               key={ride._id}
               ride={ride}
+              index={index}
               onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
             />
           ))
         )}
       </ScreenContainer>
 
-      <Pressable
-        style={styles.fab}
-        onPress={() => navigation.navigate('Create Ride')}
-        accessibilityRole="button"
-        accessibilityLabel="Create Ride"
-      >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
-        <Text style={styles.fabText}>Create Ride</Text>
-      </Pressable>
+      <AnimatedReveal delay={240} fromY={24} style={styles.fabWrap}>
+        <Pressable
+          style={styles.fabPress}
+          onPress={() => navigation.navigate('Create Ride')}
+          accessibilityRole="button"
+          accessibilityLabel="Create Ride"
+        >
+          <LinearGradient colors={tokens.gradients.fab} style={styles.fab}>
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+            <Text style={styles.fabText}>Create Ride</Text>
+          </LinearGradient>
+        </Pressable>
+      </AnimatedReveal>
     </View>
   );
 };
@@ -134,17 +142,22 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   heroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.86)',
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: '#E6EAF0',
+    borderColor: '#D8E4FA',
     padding: 18,
     marginBottom: 18,
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5
+    overflow: 'hidden',
+    ...tokens.shadows.soft
+  },
+  heroGlow: {
+    position: 'absolute',
+    left: -10,
+    right: -10,
+    top: -14,
+    height: 90,
+    borderRadius: tokens.radius.xl
   },
   topRow: {
     flexDirection: 'row',
@@ -154,7 +167,7 @@ const styles = StyleSheet.create({
   },
   topLabel: {
     color: colors.mutedText,
-    fontSize: 12,
+    fontSize: tokens.typography.caption,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -169,7 +182,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   title: {
-    fontSize: 28,
+    fontSize: tokens.typography.h1,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.3
@@ -179,11 +192,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5EAF1',
-    borderRadius: 16,
+    borderColor: '#DCE6F8',
+    borderRadius: tokens.radius.lg,
     paddingHorizontal: 12,
     height: 50,
-    backgroundColor: '#F8FAFC'
+    backgroundColor: 'rgba(255,255,255,0.92)'
   },
   searchInput: {
     flex: 1,
@@ -199,7 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2
   },
   heading: {
-    fontSize: 20,
+    fontSize: tokens.typography.h2,
     fontWeight: '800',
     color: colors.text
   },
@@ -212,13 +225,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     color: '#1D4ED8',
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#DFEAFE',
     overflow: 'hidden'
   },
   emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderColor: '#E6EAF0',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: tokens.radius.lg,
+    borderColor: '#DCE6F8',
     borderWidth: 1,
     padding: 22,
     alignItems: 'center'
@@ -235,22 +248,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20
   },
-  fab: {
+  fabWrap: {
     position: 'absolute',
     right: 18,
-    bottom: 24,
+    bottom: 28
+  },
+  fabPress: {
+    borderRadius: tokens.radius.pill
+  },
+  fab: {
     height: 54,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
+    borderRadius: tokens.radius.pill,
     paddingHorizontal: 18,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    elevation: 7
+    ...tokens.shadows.strong
   },
   fabText: {
     color: '#FFFFFF',

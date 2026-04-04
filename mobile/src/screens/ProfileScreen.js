@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import ScreenContainer from '../components/ScreenContainer';
 import CustomButton from '../components/CustomButton';
+import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const ProfileScreen = () => {
   const { user, refreshProfile, logout } = useAuth();
@@ -40,60 +43,72 @@ const ProfileScreen = () => {
 
   return (
     <ScreenContainer>
-      <View style={styles.heroCard}>
-        <View style={styles.topRow}>
-          <Text style={styles.topLabel}>My Profile</Text>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusText}>Active</Text>
-          </View>
-        </View>
-
-        <View style={styles.identityRow}>
-          <View style={styles.avatarCircle}>
-            <Ionicons name="person" size={30} color="#0A84FF" />
-          </View>
-          <View style={styles.identityTextWrap}>
-            <Text style={styles.name}>{user?.name || 'RideBuddy User'}</Text>
-            <Text style={styles.caption}>Campus Commuter</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.iconBadge}>
-              <Ionicons name="mail-outline" size={14} color="#1D4ED8" />
+      <AnimatedReveal>
+        <View style={styles.heroCard}>
+          <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
+          <View style={styles.topRow}>
+            <Text style={styles.topLabel}>My Profile</Text>
+            <View style={styles.statusPill}>
+              <Text style={styles.statusText}>Active</Text>
             </View>
-            <Text style={styles.value}>{user?.email || '-'}</Text>
           </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoRow}>
-            <View style={styles.iconBadge}>
-              <Ionicons name="call-outline" size={14} color="#1D4ED8" />
+
+          <View style={styles.identityRow}>
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person" size={30} color="#0A84FF" />
             </View>
-            <Text style={styles.value}>{user?.phone || 'Not added'}</Text>
+            <View style={styles.identityTextWrap}>
+              <Text style={styles.name}>{user?.name || 'RideBuddy User'}</Text>
+              <Text style={styles.caption}>Campus Commuter</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="mail-outline" size={14} color="#1D4ED8" />
+              </View>
+              <Text style={styles.value}>{user?.email || '-'}</Text>
+            </View>
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <View style={styles.iconBadge}>
+                <Ionicons name="call-outline" size={14} color="#1D4ED8" />
+              </View>
+              <Text style={styles.value}>{user?.phone || 'Not added'}</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </AnimatedReveal>
 
-      <CustomButton title="Refresh Profile" onPress={handleRefresh} loading={loading} variant="secondary" />
-      <CustomButton title="Logout" onPress={logout} variant="danger" style={styles.logoutButton} />
+      <AnimatedReveal delay={120}>
+        <CustomButton title="Refresh Profile" onPress={handleRefresh} loading={loading} variant="secondary" icon="refresh-outline" />
+      </AnimatedReveal>
+      <AnimatedReveal delay={180}>
+        <CustomButton title="Logout" onPress={logout} variant="danger" icon="log-out-outline" style={styles.logoutButton} />
+      </AnimatedReveal>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   heroCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderWidth: 1,
-    borderColor: '#E6EAF0',
-    borderRadius: 24,
+    borderColor: '#D8E4FA',
+    borderRadius: tokens.radius.xl,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#0B1220',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 5
+    overflow: 'hidden',
+    ...tokens.shadows.soft
+  },
+  heroGlow: {
+    position: 'absolute',
+    left: -10,
+    right: -10,
+    top: -10,
+    height: 90,
+    borderRadius: tokens.radius.xl
   },
   topRow: {
     flexDirection: 'row',
@@ -102,7 +117,7 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   topLabel: {
-    fontSize: 13,
+    fontSize: tokens.typography.caption,
     fontWeight: '800',
     color: '#6B7280',
     letterSpacing: 0.8,
@@ -137,7 +152,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   name: {
-    fontSize: 24,
+    fontSize: tokens.typography.h1,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.3
@@ -150,9 +165,9 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     borderWidth: 1,
-    borderColor: '#E7ECF2',
-    borderRadius: 16,
-    backgroundColor: '#FCFDFF',
+    borderColor: '#DDE7F9',
+    borderRadius: tokens.radius.md,
+    backgroundColor: 'rgba(255,255,255,0.86)',
     padding: 14
   },
   infoRow: {

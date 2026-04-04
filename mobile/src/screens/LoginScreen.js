@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
+import AnimatedReveal from '../components/AnimatedReveal';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const LoginScreen = ({ navigation }) => {
   const { login } = useAuth();
@@ -51,11 +55,19 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.title}>RideBuddy</Text>
-        <Text style={styles.subtitle}>Welcome back. Find your next ride in seconds.</Text>
+      <AnimatedReveal>
+        <View style={styles.container}>
+          <View style={styles.brandRow}>
+            <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+              <Ionicons name="car-sport" size={20} color="#fff" />
+            </LinearGradient>
+            <View>
+              <Text style={styles.title}>RideBuddy</Text>
+              <Text style={styles.subtitle}>Welcome back. Find your next ride in seconds.</Text>
+            </View>
+          </View>
 
-        <View style={styles.card}>
+          <View style={styles.card}>
           <InputField
             label="Email"
             value={email}
@@ -67,6 +79,7 @@ const LoginScreen = ({ navigation }) => {
             }}
             placeholder="you@email.com"
             keyboardType="email-address"
+            icon="mail-outline"
             error={errors.email}
           />
           <InputField
@@ -80,12 +93,14 @@ const LoginScreen = ({ navigation }) => {
             }}
             placeholder="Enter password"
             secureTextEntry
+            icon="lock-closed-outline"
             error={errors.password}
           />
-          <CustomButton title="Login" onPress={handleLogin} loading={loading} disabled={loading || !email.trim() || !password} />
-          <CustomButton title="Create Account" onPress={() => navigation.navigate('Signup')} variant="secondary" style={styles.secondaryCta} />
+          <CustomButton title="Login" onPress={handleLogin} loading={loading} icon="log-in-outline" disabled={loading || !email.trim() || !password} />
+          <CustomButton title="Create Account" onPress={() => navigation.navigate('Signup')} variant="secondary" icon="person-add-outline" style={styles.secondaryCta} />
+          </View>
         </View>
-      </View>
+      </AnimatedReveal>
     </ScreenContainer>
   );
 };
@@ -96,8 +111,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 20
   },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+    gap: 12
+  },
+  logoBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...tokens.shadows.strong
+  },
   title: {
-    fontSize: 32,
+    fontSize: tokens.typography.hero,
     fontWeight: '800',
     color: colors.text
   },
@@ -107,16 +136,12 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#D9E4FA',
     padding: 18,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4
+    ...tokens.shadows.soft
   },
   secondaryCta: {
     marginTop: 8

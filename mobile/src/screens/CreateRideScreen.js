@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
+import AnimatedReveal from '../components/AnimatedReveal';
 import colors from '../theme/colors';
+import tokens from '../theme/tokens';
 
 const CreateRideScreen = () => {
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
@@ -94,57 +98,88 @@ const CreateRideScreen = () => {
 
   return (
     <ScreenContainer>
-      <View style={styles.card}>
-        <Text style={styles.title}>Create Ride</Text>
-        <Text style={styles.subtitle}>Use ISO datetime format, e.g. 2026-04-10T16:00:00.000Z</Text>
+      <AnimatedReveal>
+        <View style={styles.card}>
+          <LinearGradient colors={['rgba(37,99,235,0.14)', 'rgba(124,58,237,0.1)']} style={styles.cardGlow} />
+          <View style={styles.titleRow}>
+            <View style={styles.titleIcon}>
+              <Ionicons name="car-sport" size={18} color="#FFFFFF" />
+            </View>
+            <View>
+              <Text style={styles.title}>Create Ride</Text>
+              <Text style={styles.subtitle}>Use ISO datetime, e.g. 2026-04-10T16:00:00.000Z</Text>
+            </View>
+          </View>
 
-        <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} />
-        <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} />
-        <InputField label="Date & Time (ISO)" value={form.dateTime} onChangeText={(value) => setField('dateTime', value)} placeholder="2026-04-10T16:00:00.000Z" error={errors.dateTime} />
-        <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} />
-        <InputField
-          label="Seats Available"
-          value={form.seatsAvailable}
-          onChangeText={(value) => setField('seatsAvailable', value)}
-          placeholder="3"
-          keyboardType="numeric"
-          error={errors.seatsAvailable}
-        />
-        <CustomButton
-          title="Publish Ride"
-          onPress={handleCreate}
-          loading={loading}
-          disabled={loading || !form.source.trim() || !form.destination.trim() || !form.dateTime.trim() || !form.price.trim() || !form.seatsAvailable.trim()}
-        />
-      </View>
+          <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
+          <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} icon="location-outline" />
+          <InputField label="Date & Time (ISO)" value={form.dateTime} onChangeText={(value) => setField('dateTime', value)} placeholder="2026-04-10T16:00:00.000Z" error={errors.dateTime} icon="calendar-outline" />
+          <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" />
+          <InputField
+            label="Seats Available"
+            value={form.seatsAvailable}
+            onChangeText={(value) => setField('seatsAvailable', value)}
+            placeholder="3"
+            keyboardType="numeric"
+            error={errors.seatsAvailable}
+            icon="people-outline"
+          />
+          <CustomButton
+            title="Publish Ride"
+            onPress={handleCreate}
+            loading={loading}
+            icon="paper-plane-outline"
+            disabled={loading || !form.source.trim() || !form.destination.trim() || !form.dateTime.trim() || !form.price.trim() || !form.seatsAvailable.trim()}
+          />
+        </View>
+      </AnimatedReveal>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: tokens.radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4
+    borderColor: '#D9E4FA',
+    padding: tokens.spacing.lg,
+    overflow: 'hidden',
+    ...tokens.shadows.soft
+  },
+  cardGlow: {
+    position: 'absolute',
+    left: -10,
+    right: -10,
+    top: -10,
+    height: 80,
+    borderRadius: tokens.radius.xl
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 10
+  },
+  titleIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   title: {
-    fontSize: 28,
+    fontSize: tokens.typography.h1,
     fontWeight: '800',
     color: colors.text,
-    marginBottom: 6,
     letterSpacing: -0.3
   },
   subtitle: {
-    marginBottom: 14,
+    marginTop: 2,
     color: colors.mutedText,
-    lineHeight: 20
+    lineHeight: 20,
+    maxWidth: 260
   }
 });
 

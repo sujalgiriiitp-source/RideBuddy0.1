@@ -19,6 +19,11 @@ export const apiRequest = async (path, options = {}) => {
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (!API_BASE_URL) {
+    throw new Error('Missing API URL. Set EXPO_PUBLIC_API_URL in mobile/.env to http://<LOCAL_IP>:5002/api');
+  }
+
   const url = `${API_BASE_URL}${normalizedPath}`;
 
   if (__DEV__) {
@@ -63,8 +68,8 @@ export const apiRequest = async (path, options = {}) => {
       throw new Error('Request timed out. Please try again.');
     }
 
-    if (error?.message?.includes('Failed to fetch')) {
-      throw new Error(`Failed to fetch. Please check backend at ${API_BASE_URL}.`);
+    if (error?.message?.includes('Failed to fetch') || error?.message?.includes('Network request failed')) {
+      throw new Error(`Unable to reach backend at ${API_BASE_URL}. Ensure phone and backend are on same Wi-Fi.`);
     }
     throw new Error(error?.message || 'Network request failed');
   } finally {
