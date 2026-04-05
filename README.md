@@ -134,6 +134,27 @@ npm start
 
 Then open in Expo Go / Android / iOS simulator.
 
+### Notifications in Expo SDK 53+
+
+- Expo Go does **not** support remote push notifications on SDK 53+.
+- In Expo Go, RideBuddy now disables notification registration safely (no crash).
+- To test push notifications in development, use an EAS development build.
+
+Build and run a dev client:
+
+```bash
+cd /Users/sujalgiri/RideBUDDY.1/mobile
+npx eas login
+npx eas build --profile development --platform android
+npx eas build --profile development --platform ios
+```
+
+Start the project for dev client:
+
+```bash
+npx expo start --dev-client
+```
+
 ---
 
 ## API Endpoints

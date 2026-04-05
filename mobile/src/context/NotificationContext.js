@@ -3,6 +3,28 @@ import { Platform } from 'react-native';
 import NotificationServiceMobile from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
+const resolveNotificationService = (serviceModule) => {
+  if (!serviceModule) {
+    return {};
+  }
+
+  if (serviceModule.default) {
+    return serviceModule.default;
+  }
+
+  return serviceModule;
+};
+
+const notificationService = resolveNotificationService(NotificationServiceMobile);
+
+const safeIsNotificationsAvailable = () => {
+  if (typeof notificationService?.isAvailable === 'function') {
+    return Boolean(notificationService.isAvailable());
+  }
+
+  return false;
+};
+
 const NotificationContext = createContext({
   hasPermission: false,
   expoPushToken: null,
@@ -24,6 +46,7 @@ export const NotificationProvider = ({ children, navigation }) => {
   const [hasPermission, setHasPermission] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [notification, setNotification] = useState(null);
+  const notificationsEnabled = safeIsNotificationsAvailable();
 
   useEffect(() => {
     console.log('[NotificationContext] init', { platform: Platform.OS, hasUser: Boolean(user) });
@@ -31,20 +54,26 @@ export const NotificationProvider = ({ children, navigation }) => {
 
   // Register for push notifications when user logs in
   useEffect(() => {
-    if (user && Platform.OS !== 'web') {
+    if (user && notificationsEnabled) {
       registerForPushNotifications();
     }
 
     return () => {
-      NotificationServiceMobile.removeNotificationListeners();
+      if (typeof notificationService?.removeNotificationListeners === 'function') {
+        notificationService.removeNotificationListeners();
+      }
     };
-  }, [user]);
+  }, [user, notificationsEnabled]);
 
   // Setup notification listeners
   useEffect(() => {
-    if (!user) return;
+    if (!user || !notificationsEnabled) return;
 
-    NotificationServiceMobile.setupNotificationListeners(
+    if (typeof notificationService?.setupNotificationListeners !== 'function') {
+      return;
+    }
+
+    notificationService.setupNotificationListeners(
       (notification) => {
         // Handle foreground notification
         setNotification(notification);
@@ -56,13 +85,23 @@ export const NotificationProvider = ({ children, navigation }) => {
     );
 
     return () => {
-      NotificationServiceMobile.removeNotificationListeners();
+      if (typeof notificationService?.removeNotificationListeners === 'function') {
+        notificationService.removeNotificationListeners();
+      }
     };
-  }, [user, navigation]);
+  }, [user, navigation, notificationsEnabled]);
 
   const registerForPushNotifications = async () => {
     try {
-      const token = await NotificationServiceMobile.registerForPushNotifications();
+      if (!notificationsEnabled) {
+        return null;
+      }
+
+      if (typeof notificationService?.registerForPushNotifications !== 'function') {
+        return null;
+      }
+
+      const token = await notificationService.registerForPushNotifications();
       if (token) {
         setExpoPushToken(token);
         setHasPermission(true);
@@ -73,7 +112,17 @@ export const NotificationProvider = ({ children, navigation }) => {
   };
 
   const requestPermission = async () => {
-    const granted = await NotificationServiceMobile.requestPermissions();
+    if (!notificationsEnabled) {
+      setHasPermission(false);
+      return false;
+    }
+
+    if (typeof notificationService?.requestPermissions !== 'function') {
+      setHasPermission(false);
+      return false;
+    }
+
+    const granted = await notificationService.requestPermissions();
     setHasPermission(granted);
     
     if (granted && user) {
@@ -84,12 +133,19 @@ export const NotificationProvider = ({ children, navigation }) => {
   };
 
   const clearNotifications = async () => {
-    await NotificationServiceMobile.clearAllNotifications();
+    if (!notificationsEnabled) {
+      setNotification(null);
+      return;
+    }
+
+    if (typeof notificationService?.clearAllNotifications === 'function') {
+      await notificationService.clearAllNotifications();
+    }
     setNotification(null);
   };
 
   const handleNotificationTap = (response) => {
-    const data = response.notification.request.content.data;
+    const data = response?.notification?.request?.content?.data || {};
     
     if (!navigation) return;
 

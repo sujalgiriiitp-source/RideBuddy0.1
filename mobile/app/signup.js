@@ -1,13 +1,14 @@
 import React from 'react';
-import Toast from 'react-native-toast-message';
-import { AuthProvider } from '../src/context/AuthContext';
+import { Redirect } from 'expo-router';
 import SignupScreen from '../src/screens/SignupScreen';
+import { useAuth } from '../src/context/AuthContext';
 
 export default function SignupRoute() {
-  return (
-    <AuthProvider>
-      <SignupScreen />
-      <Toast />
-    </AuthProvider>
-  );
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)/home" />;
+  }
+
+  return <SignupScreen />;
 }

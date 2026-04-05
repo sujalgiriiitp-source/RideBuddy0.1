@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
+import { Animated, FlatList, Pressable, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import RideCard from '../components/RideCard';
-import { RideCardSkeleton, AnimatedEmptyState, PullToRefresh, StaggeredList } from '../components';
+import { RideCardSkeleton, AnimatedEmptyState, StaggeredItem } from '../components';
 import { useTheme } from '../context/ThemeContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -101,71 +101,79 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
+  const renderHeader = () => (
+    <>
+      <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
+        <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
+        <View style={styles.topRow}>
+          <View>
+            <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
+              <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={18} color={theme.primary} />
+            </Pressable>
+            <View style={[styles.mapIconWrap, { backgroundColor: theme.primary }]}> 
+              <Ionicons name="location" size={20} color="#FFFFFF" />
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.searchWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+          <Ionicons name="search-outline" size={18} color="#8C98A8" />
+          <TextInput
+            placeholder="Search routes, destination, pickup"
+            placeholderTextColor="#9AA4B2"
+            style={[styles.searchInput, { color: theme.text }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.sectionHead}>
+        <Text style={[styles.heading, { color: theme.text }]}>Available rides</Text>
+        <Text style={styles.count}>{rides.length}</Text>
+      </View>
+    </>
+  );
+
+  const renderRide = ({ item, index }) => (
+    <StaggeredItem delay={index * 80}>
+      <RideCard
+        ride={item}
+        index={index}
+        onPress={() => navigation.navigate('Ride Details', { rideId: item._id })}
+      />
+    </StaggeredItem>
+  );
+
+  const renderEmpty = () => (
+    <AnimatedEmptyState
+      icon="car-outline"
+      title="No rides available"
+      message="Pull to refresh or create a new ride to get started."
+      actionText="Create Ride"
+      onActionPress={() => navigation.navigate('Create Ride')}
+      iconColor={colors.primary}
+    />
+  );
+
   return (
     <View style={[styles.page, { backgroundColor: theme.background }]}>
-      <ScrollView
-        refreshControl={
-          <PullToRefresh onRefresh={onRefresh} refreshing={refreshing} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.pageScrollContent}
-      >
-        <ScreenContainer scroll={false}>
-        <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
-          <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
-          <View style={styles.topRow}>
-            <View>
-              <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
-              <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
-                <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={18} color={theme.primary} />
-              </Pressable>
-              <View style={[styles.mapIconWrap, { backgroundColor: theme.primary }]}> 
-                <Ionicons name="location" size={20} color="#FFFFFF" />
-              </View>
-            </View>
-          </View>
-
-          <View style={[styles.searchWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
-            <Ionicons name="search-outline" size={18} color="#8C98A8" />
-            <TextInput
-              placeholder="Search routes, destination, pickup"
-              placeholderTextColor="#9AA4B2"
-              style={[styles.searchInput, { color: theme.text }]}
-            />
-          </View>
-        </View>
-
-        <View style={styles.sectionHead}>
-          <Text style={[styles.heading, { color: theme.text }]}>Available rides</Text>
-          <Text style={styles.count}>{rides.length}</Text>
-        </View>
-
-        {rides.length === 0 ? (
-          <AnimatedEmptyState
-            icon="car-outline"
-            title="No rides available"
-            message="Pull to refresh or create a new ride to get started."
-            actionText="Create Ride"
-            onActionPress={() => navigation.navigate('Create Ride')}
-            iconColor={colors.primary}
-          />
-        ) : (
-          <StaggeredList staggerDelay={80}>
-            {rides.map((ride, index) => (
-              <RideCard
-                key={ride._id}
-                ride={ride}
-                index={index}
-                onPress={() => navigation.navigate('Ride Details', { rideId: ride._id })}
-              />
-            ))}
-          </StaggeredList>
-        )}
+      <ScreenContainer scroll={false}>
+        <FlatList
+          data={rides}
+          renderItem={renderRide}
+          keyExtractor={(item, index) => item?._id || String(index)}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.pageScrollContent, rides.length === 0 && styles.emptyListContent]}
+        />
       </ScreenContainer>
-      </ScrollView>
 
       <Animated.View style={[styles.fabWrap, { transform: [{ scale: fabScale }] }]}>
         <Pressable
@@ -191,7 +199,12 @@ const styles = StyleSheet.create({
     flex: 1
   },
   pageScrollContent: {
-    paddingBottom: tokens.spacing['2xl']
+    paddingHorizontal: tokens.spacing.md,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: 130
+  },
+  emptyListContent: {
+    flexGrow: 1
   },
   center: {
     flex: 1,

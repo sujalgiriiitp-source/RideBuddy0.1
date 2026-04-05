@@ -23,6 +23,7 @@ const formatDateTime = (value) => {
 
 const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false }) => {
   const scale = useRef(new Animated.Value(1)).current;
+  const cardOpacity = useRef(new Animated.Value(1)).current;
   const shadowAnim = useRef(new Animated.Value(0)).current;
 
   const source = ride.source || ride.from || 'Unknown source';
@@ -47,6 +48,11 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
         friction: 8,
         tension: 100
       }),
+      Animated.timing(cardOpacity, {
+        toValue: toValue < 1 ? 0.98 : 1,
+        duration: 120,
+        useNativeDriver: true
+      }),
       Animated.timing(shadowAnim, {
         toValue: toValue < 1 ? 1 : 0,
         duration: 150,
@@ -68,6 +74,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
           highlight && styles.highlightCard, 
           { 
             transform: [{ scale }],
+            opacity: cardOpacity,
             shadowOpacity: animatedShadowOpacity
           }
         ]}

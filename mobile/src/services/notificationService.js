@@ -1,11 +1,22 @@
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest } from '../api';
 
+function isExpoGo() {
+  return Constants.appOwnership === 'expo';
+}
+
+const canUseNotifications = () =>
+  Platform.OS !== 'web' &&
+  !isExpoGo() &&
+  Boolean(Notifications) &&
+  Boolean(Device?.isDevice);
+
 // Configure notification behavior
-if (Platform.OS !== 'web') {
+if (canUseNotifications()) {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -27,11 +38,36 @@ class NotificationServiceMobile {
   static notificationListener = null;
   static responseListener = null;
 
+  static isAvailable() {
+    return canUseNotifications();
+  }
+
+  static getUnavailableReason() {
+    if (Platform.OS === 'web') {
+      return 'Notifications are disabled on web.';
+    }
+
+    if (isExpoGo()) {
+      return 'Notifications disabled in Expo Go';
+    }
+
+    if (!Notifications || !Device) {
+      return 'Notification modules are unavailable in this runtime.';
+    }
+
+    return null;
+  }
+
   /**
    * Request notification permissions
    */
   static async requestPermissions() {
     try {
+      if (!this.isAvailable()) {
+        console.log(this.getUnavailableReason());
+        return false;
+      }
+
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -77,8 +113,13 @@ class NotificationServiceMobile {
    */
   static async registerForPushNotifications() {
     try {
+      if (!this.isAvailable()) {
+        console.log(this.getUnavailableReason());
+        return null;
+      }
+
       // Only works on physical devices
-      if (!Device.isDevice) {
+      if (!Device?.isDevice) {
         console.warn('Push notifications only work on physical devices');
         return null;
       }
@@ -89,7 +130,7 @@ class NotificationServiceMobile {
         return null;
       }
 
-      // Get Expo push token
+      // Expo Go is blocked above; token generation runs only in dev build/production.
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: '4250b61c-79b4-44c6-8aee-0027314c2e2d' // From app.json extra.eas.projectId
       });
@@ -124,6 +165,10 @@ class NotificationServiceMobile {
    */
   static async unregisterFromPushNotifications() {
     try {
+      if (!this.isAvailable()) {
+        return null;
+      }
+
       const deviceId = await this.getDeviceId();
 
       await apiRequest('/notifications/unregister-token', {
@@ -142,6 +187,10 @@ class NotificationServiceMobile {
    * Setup notification listeners
    */
   static setupNotificationListeners(onNotification, onNotificationResponse) {
+    if (!this.isAvailable()) {
+      return;
+    }
+
     // Listener for foreground notifications
     this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received (foreground):', notification);
@@ -163,6 +212,10 @@ class NotificationServiceMobile {
    * Remove notification listeners
    */
   static removeNotificationListeners() {
+    if (!Notifications) {
+      return;
+    }
+
     if (this.notificationListener) {
       Notifications.removeNotificationSubscription(this.notificationListener);
       this.notificationListener = null;
@@ -179,6 +232,10 @@ class NotificationServiceMobile {
    */
   static async getBadgeCount() {
     try {
+      if (!this.isAvailable()) {
+        return 0;
+      }
+
       const count = await Notifications.getBadgeCountAsync();
       return count;
     } catch (error) {
@@ -192,6 +249,10 @@ class NotificationServiceMobile {
    */
   static async setBadgeCount(count) {
     try {
+      if (!this.isAvailable()) {
+        return null;
+      }
+
       await Notifications.setBadgeCountAsync(count);
     } catch (error) {
       console.error('Error setting badge count:', error);
@@ -203,6 +264,10 @@ class NotificationServiceMobile {
    */
   static async clearAllNotifications() {
     try {
+      if (!this.isAvailable()) {
+        return null;
+      }
+
       await Notifications.dismissAllNotificationsAsync();
       await this.setBadgeCount(0);
     } catch (error) {
@@ -215,6 +280,10 @@ class NotificationServiceMobile {
    */
   static async scheduleLocalNotification(title, body, data = {}, delay = 0) {
     try {
+      if (!this.isAvailable()) {
+        return null;
+      }
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
@@ -232,4 +301,6 @@ class NotificationServiceMobile {
   }
 }
 
+export const isAvailable = () => NotificationServiceMobile.isAvailable();
 export default NotificationServiceMobile;
+export { NotificationServiceMobile };
