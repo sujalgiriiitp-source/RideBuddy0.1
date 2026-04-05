@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import ScreenContainer from '../components/ScreenContainer';
 import CustomButton from '../components/CustomButton';
 import AnimatedReveal from '../components/AnimatedReveal';
+import { RideCardSkeleton } from '../components';
 import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -41,8 +42,17 @@ const ProfileScreen = () => {
     }
   };
 
+  if (loading && !user) {
+    return (
+      <ScreenContainer contentContainerStyle={styles.screenContent}>
+        <RideCardSkeleton />
+        <RideCardSkeleton />
+      </ScreenContainer>
+    );
+  }
+
   return (
-    <ScreenContainer>
+    <ScreenContainer contentContainerStyle={styles.screenContent}>
       <AnimatedReveal>
         <View style={styles.heroCard}>
           <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
@@ -92,6 +102,9 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: tokens.spacing['5xl']
+  },
   heroCard: {
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderWidth: 1,

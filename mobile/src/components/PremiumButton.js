@@ -88,7 +88,14 @@ const PremiumButton = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={isDisabledOrLoading}
-        style={[styles.wrapper, fullWidth && styles.fullWidth, style]}
+        style={({ pressed, hovered }) => [
+          styles.wrapper,
+          fullWidth && styles.fullWidth,
+          hovered && !isDisabledOrLoading && styles.hovered,
+          pressed && !isDisabledOrLoading && styles.pressedWrap,
+          isDisabledOrLoading && styles.disabledWrap,
+          style
+        ]}
         {...rest}
       >
         <LinearGradient
@@ -136,6 +143,15 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.lg,
     ...tokens.shadows.md,
     overflow: 'hidden'
+  },
+  hovered: {
+    opacity: 0.96
+  },
+  pressedWrap: {
+    opacity: 0.9
+  },
+  disabledWrap: {
+    opacity: 0.72
   },
   pressed: {
     ...tokens.shadows.sm

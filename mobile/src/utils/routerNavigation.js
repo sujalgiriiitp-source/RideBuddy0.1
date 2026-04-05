@@ -22,6 +22,8 @@ const buildHref = (name, params = {}) => {
       return '/(tabs)/intent';
     case 'Profile':
       return '/(tabs)/profile';
+    case 'Notifications':
+      return '/notifications';
     case 'Ride Details': {
       const rideId = normalizeParam(params?.rideId);
       if (!rideId) {

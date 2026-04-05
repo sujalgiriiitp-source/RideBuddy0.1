@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationServiceMobile from '../services/notificationService';
 import { useAuth } from './AuthContext';
+
+const IN_APP_NOTIFICATIONS_KEY = '@ridebuddy:in_app_notifications';
 
 const resolveNotificationService = (serviceModule) => {
   if (!serviceModule) {
@@ -29,6 +32,11 @@ const NotificationContext = createContext({
   hasPermission: false,
   expoPushToken: null,
   notification: null,
+  notifications: [],
+  unreadCount: 0,
+  addInAppNotification: () => {},
+  markNotificationAsRead: () => {},
+  clearInAppNotifications: async () => {},
   requestPermission: async () => {},
   clearNotifications: async () => {}
 });
@@ -46,7 +54,72 @@ export const NotificationProvider = ({ children, navigation }) => {
   const [hasPermission, setHasPermission] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const notificationsEnabled = safeIsNotificationsAvailable();
+  const unreadCount = notifications.filter((item) => !item.read).length;
+
+  const persistInAppNotifications = async (nextNotifications) => {
+    try {
+      await AsyncStorage.setItem(IN_APP_NOTIFICATIONS_KEY, JSON.stringify(nextNotifications));
+    } catch (error) {
+      console.error('Failed to persist in-app notifications:', error);
+    }
+  };
+
+  const addInAppNotification = (payload = {}) => {
+    const nextNotification = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: payload.title || 'Notification',
+      message: payload.message || '',
+      type: payload.type || 'general',
+      rideId: payload.rideId || null,
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+
+    setNotifications((previousNotifications) => {
+      const nextNotifications = [nextNotification, ...previousNotifications].slice(0, 100);
+      persistInAppNotifications(nextNotifications);
+      return nextNotifications;
+    });
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications((previousNotifications) => {
+      const nextNotifications = previousNotifications.map((item) =>
+        item.id === notificationId ? { ...item, read: true } : item
+      );
+      persistInAppNotifications(nextNotifications);
+      return nextNotifications;
+    });
+  };
+
+  const clearInAppNotifications = async () => {
+    setNotifications([]);
+    try {
+      await AsyncStorage.removeItem(IN_APP_NOTIFICATIONS_KEY);
+    } catch (error) {
+      console.error('Failed to clear in-app notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    const restoreNotifications = async () => {
+      try {
+        const storedNotifications = await AsyncStorage.getItem(IN_APP_NOTIFICATIONS_KEY);
+        if (storedNotifications) {
+          const parsedNotifications = JSON.parse(storedNotifications);
+          if (Array.isArray(parsedNotifications)) {
+            setNotifications(parsedNotifications);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to restore in-app notifications:', error);
+      }
+    };
+
+    restoreNotifications();
+  }, []);
 
   useEffect(() => {
     console.log('[NotificationContext] init', { platform: Platform.OS, hasUser: Boolean(user) });
@@ -77,6 +150,13 @@ export const NotificationProvider = ({ children, navigation }) => {
       (notification) => {
         // Handle foreground notification
         setNotification(notification);
+        const pushContent = notification?.request?.content;
+        addInAppNotification({
+          title: pushContent?.title || 'RideBuddy',
+          message: pushContent?.body || 'You have a new update.',
+          type: pushContent?.data?.type || 'push',
+          rideId: pushContent?.data?.rideId || null
+        });
       },
       (response) => {
         // Handle notification tap
@@ -179,6 +259,11 @@ export const NotificationProvider = ({ children, navigation }) => {
         hasPermission,
         expoPushToken,
         notification,
+        notifications,
+        unreadCount,
+        addInAppNotification,
+        markNotificationAsRead,
+        clearInAppNotifications,
         requestPermission,
         clearNotifications
       }}

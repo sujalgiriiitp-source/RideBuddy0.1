@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,7 @@ import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
 import RideCard from '../components/RideCard';
 import AnimatedReveal from '../components/AnimatedReveal';
+import { AnimatedEmptyState, RideCardSkeleton } from '../components';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -122,16 +123,40 @@ const IntentScreen = () => {
     }
   };
 
+  const renderMatchedRide = useCallback(
+    ({ item, index }) => <RideCard ride={item} index={index} highlight />,
+    []
+  );
+
+  const renderIntentItem = useCallback(
+    ({ item, index }) => (
+      <View style={styles.intentCard}>
+        <AnimatedReveal delay={120 + index * 50}>
+          <Text style={styles.intentRoute}>{item.source} → {item.destination}</Text>
+          <Text style={styles.intentMeta}>When: {formatDisplayDate(item.dateTime || item.date)}</Text>
+          <Text style={styles.intentMeta}>By: {item?.user?.name || 'Anonymous'}</Text>
+        </AnimatedReveal>
+      </View>
+    ),
+    []
+  );
+
+  const keyExtractor = useCallback((item, index) => item?._id || String(index), []);
+
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <ScreenContainer contentContainerStyle={styles.screenContent}>
+        <View style={styles.heroCard}>
+          <RideCardSkeleton />
+        </View>
+        <RideCardSkeleton />
+        <RideCardSkeleton />
+      </ScreenContainer>
     );
   }
 
   return (
-    <ScreenContainer>
+    <ScreenContainer contentContainerStyle={styles.screenContent}>
       <AnimatedReveal>
         <View style={styles.heroCard}>
           <LinearGradient colors={['rgba(124,58,237,0.13)', 'rgba(37,99,235,0.08)']} style={styles.heroGlow} />
@@ -181,30 +206,47 @@ const IntentScreen = () => {
 
       <Text style={styles.section}>Matched Rides</Text>
       {matches.length === 0 ? (
-        <Text style={styles.empty}>No matches yet.</Text>
+        <AnimatedEmptyState
+          icon="compass-outline"
+          title="No matched rides"
+          message="Post an intent or refresh later to discover matching rides."
+          style={styles.emptyState}
+        />
       ) : (
-        matches.map((ride, index) => <RideCard key={ride._id} ride={ride} index={index} highlight />)
+        <FlatList
+          data={matches}
+          renderItem={renderMatchedRide}
+          keyExtractor={keyExtractor}
+          scrollEnabled={false}
+          removeClippedSubviews
+        />
       )}
 
       <Text style={styles.section}>Public Intents</Text>
       {intents.length === 0 ? (
-        <Text style={styles.empty}>No travel intents posted yet.</Text>
+        <AnimatedEmptyState
+          icon="chatbox-ellipses-outline"
+          title="No public intents yet"
+          message="Be the first to share your travel plan with others."
+          style={styles.emptyState}
+        />
       ) : (
-        intents.map((intent, index) => (
-          <View style={styles.intentCard} key={intent._id}>
-            <AnimatedReveal delay={120 + index * 50}>
-            <Text style={styles.intentRoute}>{intent.source} → {intent.destination}</Text>
-            <Text style={styles.intentMeta}>When: {formatDisplayDate(intent.dateTime || intent.date)}</Text>
-            <Text style={styles.intentMeta}>By: {intent?.user?.name || 'Anonymous'}</Text>
-            </AnimatedReveal>
-          </View>
-        ))
+        <FlatList
+          data={intents}
+          renderItem={renderIntentItem}
+          keyExtractor={keyExtractor}
+          scrollEnabled={false}
+          removeClippedSubviews
+        />
       )}
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: tokens.spacing['5xl']
+  },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -264,6 +306,11 @@ const styles = StyleSheet.create({
   empty: {
     color: colors.mutedText,
     marginBottom: 8
+  },
+  emptyState: {
+    minHeight: 170,
+    paddingVertical: tokens.spacing.xl,
+    marginBottom: tokens.spacing.sm
   },
   intentCard: {
     backgroundColor: 'rgba(255,255,255,0.88)',

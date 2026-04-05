@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
 import AnimatedReveal from '../components/AnimatedReveal';
+import { useNotifications } from '../context/NotificationContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -25,12 +26,23 @@ const formatDisplayDate = (value) => {
   return parsedDate.toLocaleString();
 };
 
+const extractApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+};
+
 const RideDetailsScreen = ({ route }) => {
   const { rideId } = route.params;
+  const { addInAppNotification } = useNotifications();
   const [ride, setRide] = useState(null);
   const [seatsBooked, setSeatsBooked] = useState('1');
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
 
   const fetchRide = async () => {
     const response = await apiRequest(`/rides/${rideId}`);
@@ -53,20 +65,7 @@ const RideDetailsScreen = ({ route }) => {
     load();
   }, [rideId]);
 
-  const handleJoin = async () => {
-    const parsedSeats = Number(seatsBooked);
-    const availableSeats = Number(ride?.seatsAvailable ?? ride?.availableSeats ?? 0);
-
-    if (!Number.isInteger(parsedSeats) || parsedSeats <= 0) {
-      Toast.show({ type: 'error', text1: 'Invalid seat count', text2: 'Please enter a valid positive number' });
-      return;
-    }
-
-    if (parsedSeats > availableSeats) {
-      Toast.show({ type: 'error', text1: 'Not enough seats', text2: 'Please choose fewer seats' });
-      return;
-    }
-
+  const joinRide = async (parsedSeats, availableSeats) => {
     try {
       setJoining(true);
       const token = await AsyncStorage.getItem('token');
@@ -79,12 +78,123 @@ const RideDetailsScreen = ({ route }) => {
         token,
         body: { seatsBooked: parsedSeats }
       });
-      Toast.show({ type: 'success', text1: 'Ride joined successfully' });
-      await fetchRide();
+
+      const nextAvailableSeats = Math.max(0, availableSeats - parsedSeats);
+      setRide((previousRide) => {
+        if (!previousRide) {
+          return previousRide;
+        }
+
+        return {
+          ...previousRide,
+          seatsAvailable: nextAvailableSeats,
+          availableSeats: nextAvailableSeats
+        };
+      });
+      setSeatsBooked('1');
+
+      addInAppNotification({
+        type: 'ride_booked',
+        title: 'Ride Booked',
+        message: `You booked ${parsedSeats} seat${parsedSeats > 1 ? 's' : ''} for ${ride.source || ride.from} → ${ride.destination || ride.to}.`,
+        rideId
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Ride booked successfully',
+        text2: `${parsedSeats} seat${parsedSeats > 1 ? 's' : ''} confirmed`
+      });
+
+      try {
+        await fetchRide();
+      } catch (refreshError) {
+        console.warn('Ride refresh failed after booking:', refreshError);
+      }
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Unable to join ride', text2: error.message });
+      Toast.show({
+        type: 'error',
+        text1: 'Unable to join ride',
+        text2: extractApiErrorMessage(error, 'Unable to complete your booking right now.')
+      });
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleJoin = () => {
+    const parsedSeats = Number(seatsBooked);
+    const availableSeats = Number(ride?.seatsAvailable ?? ride?.availableSeats ?? 0);
+
+    if (availableSeats <= 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Ride is full',
+        text2: 'No seats are available for this ride.'
+      });
+      return;
+    }
+
+    if (!Number.isInteger(parsedSeats) || parsedSeats <= 0) {
+      Toast.show({ type: 'error', text1: 'Invalid seat count', text2: 'Please enter a valid positive number' });
+      return;
+    }
+
+    if (parsedSeats > availableSeats) {
+      Toast.show({ type: 'error', text1: 'Not enough seats', text2: 'Please choose fewer seats' });
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Booking',
+      `Book ${parsedSeats} seat${parsedSeats > 1 ? 's' : ''} for this ride?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Confirm',
+          onPress: () => {
+            joinRide(parsedSeats, availableSeats);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleOpenChat = async () => {
+    try {
+      setOpeningChat(true);
+
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login again to open chat');
+      }
+
+      const response = await apiRequest(`/chat/conversations/${rideId}`, {
+        method: 'GET',
+        token
+      });
+
+      const conversation = response?.conversation;
+      if (!conversation?._id) {
+        throw new Error('Unable to open conversation');
+      }
+
+      navigation.navigate('ChatScreen', {
+        conversationId: conversation._id,
+        rideId,
+        rideName: `${ride.source || ride.from} → ${ride.destination || ride.to}`
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Unable to open chat',
+        text2: extractApiErrorMessage(error, 'Please try again in a moment.')
+      });
+    } finally {
+      setOpeningChat(false);
     }
   };
 
@@ -149,6 +259,15 @@ const RideDetailsScreen = ({ route }) => {
       </ScreenContainer>
 
       <View style={styles.footerCta}>
+        <CustomButton
+          title="Message Driver"
+          onPress={handleOpenChat}
+          loading={openingChat}
+          variant="secondary"
+          icon="chatbubble-ellipses-outline"
+          disabled={openingChat || joining}
+          style={styles.chatButton}
+        />
         <CustomButton
           title="Join Ride 🚀"
           onPress={handleJoin}
@@ -254,7 +373,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#DCE6F8',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: 'rgba(255,255,255,0.9)'
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    gap: 10
+  },
+  chatButton: {
+    marginBottom: 2
   }
 });
 

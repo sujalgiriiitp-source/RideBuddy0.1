@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
+import { apiRequest } from '../api';
 
 const ChatContext = createContext({
   socket: null,
@@ -170,22 +171,36 @@ export const ChatProvider = ({ children }) => {
 
   // Send message via socket
   const sendMessage = async (conversationId, messageType, content, metadata = {}) => {
-    if (!socket || !isConnected) {
-      throw new Error('Chat not connected');
+    if (socket && isConnected) {
+      return new Promise((resolve) => {
+        socket.emit('chat:message:send', {
+          conversationId,
+          senderId: user._id,
+          messageType,
+          content,
+          metadata
+        });
+
+        resolve({ queued: true });
+      });
     }
 
-    return new Promise((resolve, reject) => {
-      socket.emit('chat:message:send', {
+    if (!token) {
+      throw new Error('Chat unavailable. Please login again.');
+    }
+
+    const response = await apiRequest('/chat/messages', {
+      method: 'POST',
+      token,
+      body: {
         conversationId,
-        senderId: user._id,
         messageType,
         content,
         metadata
-      });
-
-      // Optimistic update - assume success
-      resolve();
+      }
     });
+
+    return response?.message || null;
   };
 
   // Mark messages as read

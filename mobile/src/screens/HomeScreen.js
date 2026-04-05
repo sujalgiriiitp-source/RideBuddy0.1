@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, FlatList, Pressable, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,16 +10,85 @@ import ScreenContainer from '../components/ScreenContainer';
 import RideCard from '../components/RideCard';
 import { RideCardSkeleton, AnimatedEmptyState, StaggeredItem } from '../components';
 import { useTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
 const HomeScreen = ({ navigation }) => {
   const { isDarkMode, toggleTheme, theme } = useTheme();
+  const { unreadCount } = useNotifications();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fabPressed, setFabPressed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sortBy, setSortBy] = useState('time');
   const fabScale = React.useRef(new Animated.Value(1)).current;
+
+  const normalizeDateString = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const filteredRides = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const normalizedDate = filterDate.trim();
+    const parsedMinPrice = minPrice.trim() ? Number(minPrice) : null;
+    const parsedMaxPrice = maxPrice.trim() ? Number(maxPrice) : null;
+
+    const nextRides = rides.filter((ride) => {
+      const source = String(ride?.source || ride?.from || '').toLowerCase();
+      const destination = String(ride?.destination || ride?.to || '').toLowerCase();
+      const rideDate = normalizeDateString(ride?.dateTime || ride?.date);
+      const ridePrice = Number(ride?.price ?? 0);
+
+      const matchesQuery =
+        !normalizedQuery || source.includes(normalizedQuery) || destination.includes(normalizedQuery);
+
+      const matchesDate = !normalizedDate || rideDate === normalizedDate;
+
+      const matchesMinPrice =
+        parsedMinPrice === null || (Number.isFinite(parsedMinPrice) && ridePrice >= parsedMinPrice);
+
+      const matchesMaxPrice =
+        parsedMaxPrice === null || (Number.isFinite(parsedMaxPrice) && ridePrice <= parsedMaxPrice);
+
+      return matchesQuery && matchesDate && matchesMinPrice && matchesMaxPrice;
+    });
+
+    const sortedRides = [...nextRides];
+
+    if (sortBy === 'price') {
+      sortedRides.sort((firstRide, secondRide) => {
+        const firstPrice = Number(firstRide?.price ?? 0);
+        const secondPrice = Number(secondRide?.price ?? 0);
+        return firstPrice - secondPrice;
+      });
+      return sortedRides;
+    }
+
+    sortedRides.sort((firstRide, secondRide) => {
+      const firstTime = new Date(firstRide?.dateTime || firstRide?.date || 0).getTime();
+      const secondTime = new Date(secondRide?.dateTime || secondRide?.date || 0).getTime();
+      return firstTime - secondTime;
+    });
+
+    return sortedRides;
+  }, [rides, searchQuery, filterDate, minPrice, maxPrice, sortBy]);
 
   const fetchRides = useCallback(async () => {
     if (__DEV__) {
@@ -53,7 +122,7 @@ const HomeScreen = ({ navigation }) => {
     }, [fetchRides])
   );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       await fetchRides();
@@ -62,9 +131,9 @@ const HomeScreen = ({ navigation }) => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [fetchRides]);
 
-  const onFabPressIn = () => {
+  const onFabPressIn = useCallback(() => {
     setFabPressed(true);
     if (Platform.OS !== 'web' && Haptics?.impactAsync) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -75,9 +144,9 @@ const HomeScreen = ({ navigation }) => {
       friction: 8,
       tension: 100
     }).start();
-  };
+  }, [fabScale]);
 
-  const onFabPressOut = () => {
+  const onFabPressOut = useCallback(() => {
     setFabPressed(false);
     Animated.spring(fabScale, {
       toValue: 1,
@@ -85,7 +154,179 @@ const HomeScreen = ({ navigation }) => {
       friction: 8,
       tension: 100
     }).start();
-  };
+  }, [fabScale]);
+
+  const goToNotifications = useCallback(() => {
+    navigation.navigate('Notifications');
+  }, [navigation]);
+
+  const goToCreateRide = useCallback(() => {
+    navigation.navigate('Create Ride');
+  }, [navigation]);
+
+  const goToRideDetails = useCallback(
+    (rideId) => {
+      navigation.navigate('Ride Details', { rideId });
+    },
+    [navigation]
+  );
+
+  const onSortByTime = useCallback(() => {
+    setSortBy('time');
+  }, []);
+
+  const onSortByPrice = useCallback(() => {
+    setSortBy('price');
+  }, []);
+
+  const keyExtractor = useCallback((item, index) => item?._id || String(index), []);
+
+  const renderHeader = useCallback(() => (
+    <>
+      <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
+        <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
+        <View style={styles.topRow}>
+          <View>
+            <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
+              <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={18} color={theme.primary} />
+            </Pressable>
+            <Pressable
+              style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]}
+              onPress={goToNotifications}
+            >
+              <Ionicons name="notifications-outline" size={18} color={theme.primary} />
+              {unreadCount > 0 ? (
+                <View style={styles.unreadDot}>
+                  <Text style={styles.unreadDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <View style={[styles.mapIconWrap, { backgroundColor: theme.primary }]}> 
+              <Ionicons name="location" size={20} color="#FFFFFF" />
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.searchWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+          <Ionicons name="search-outline" size={18} color="#8C98A8" />
+          <TextInput
+            placeholder="Search routes, destination, pickup"
+            placeholderTextColor="#9AA4B2"
+            style={[styles.searchInput, { color: theme.text }]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <View style={styles.filtersGrid}>
+          <View style={[styles.filterInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+            <Ionicons name="calendar-outline" size={16} color="#8C98A8" />
+            <TextInput
+              placeholder="Date (YYYY-MM-DD)"
+              placeholderTextColor="#9AA4B2"
+              value={filterDate}
+              onChangeText={setFilterDate}
+              style={[styles.filterInput, { color: theme.text }]}
+            />
+          </View>
+
+          <View style={styles.priceRow}>
+            <View style={[styles.filterInputWrap, styles.priceInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+              <TextInput
+                placeholder="Min ₹"
+                placeholderTextColor="#9AA4B2"
+                value={minPrice}
+                onChangeText={setMinPrice}
+                keyboardType="numeric"
+                style={[styles.filterInput, { color: theme.text }]}
+              />
+            </View>
+            <View style={[styles.filterInputWrap, styles.priceInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+              <TextInput
+                placeholder="Max ₹"
+                placeholderTextColor="#9AA4B2"
+                value={maxPrice}
+                onChangeText={setMaxPrice}
+                keyboardType="numeric"
+                style={[styles.filterInput, { color: theme.text }]}
+              />
+            </View>
+          </View>
+
+          <View style={styles.sortRow}>
+            <Pressable
+              onPress={onSortByTime}
+              style={[
+                styles.sortChip,
+                { borderColor: theme.border, backgroundColor: sortBy === 'time' ? '#DBEAFE' : theme.surface }
+              ]}
+            >
+              <Ionicons name="time-outline" size={14} color={sortBy === 'time' ? '#1D4ED8' : '#64748B'} />
+              <Text style={[styles.sortChipText, { color: sortBy === 'time' ? '#1D4ED8' : theme.textSecondary }]}>Time</Text>
+            </Pressable>
+            <Pressable
+              onPress={onSortByPrice}
+              style={[
+                styles.sortChip,
+                { borderColor: theme.border, backgroundColor: sortBy === 'price' ? '#DBEAFE' : theme.surface }
+              ]}
+            >
+              <Ionicons name="wallet-outline" size={14} color={sortBy === 'price' ? '#1D4ED8' : '#64748B'} />
+              <Text style={[styles.sortChipText, { color: sortBy === 'price' ? '#1D4ED8' : theme.textSecondary }]}>Price</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.sectionHead}>
+        <Text style={[styles.heading, { color: theme.text }]}>Available rides</Text>
+        <Text style={styles.count}>{filteredRides.length}</Text>
+      </View>
+    </>
+  ), [
+    theme,
+    toggleTheme,
+    isDarkMode,
+    unreadCount,
+    searchQuery,
+    filterDate,
+    minPrice,
+    maxPrice,
+    sortBy,
+    filteredRides.length,
+    goToNotifications,
+    onSortByTime,
+    onSortByPrice
+  ]);
+
+  const renderRide = useCallback(({ item, index }) => (
+    <StaggeredItem delay={index * 80}>
+      <RideCard
+        ride={item}
+        index={index}
+        onPress={() => goToRideDetails(item._id)}
+      />
+    </StaggeredItem>
+  ), [goToRideDetails]);
+
+  const renderEmpty = useCallback(() => (
+    <AnimatedEmptyState
+      icon="car-outline"
+      title={rides.length === 0 ? 'No rides available' : 'No matching rides'}
+      message={
+        rides.length === 0
+          ? 'Pull to refresh or create a new ride to get started.'
+          : 'Try changing search text, date, or price filters.'
+      }
+      actionText="Create Ride"
+      onActionPress={goToCreateRide}
+      iconColor={colors.primary}
+    />
+  ), [goToCreateRide, rides.length]);
 
   if (loading) {
     return (
@@ -101,84 +342,32 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
-  const renderHeader = () => (
-    <>
-      <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}> 
-        <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
-        <View style={styles.topRow}>
-          <View>
-            <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
-            <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
-              <Ionicons name={isDarkMode ? 'sunny-outline' : 'moon-outline'} size={18} color={theme.primary} />
-            </Pressable>
-            <View style={[styles.mapIconWrap, { backgroundColor: theme.primary }]}> 
-              <Ionicons name="location" size={20} color="#FFFFFF" />
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.searchWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
-          <Ionicons name="search-outline" size={18} color="#8C98A8" />
-          <TextInput
-            placeholder="Search routes, destination, pickup"
-            placeholderTextColor="#9AA4B2"
-            style={[styles.searchInput, { color: theme.text }]}
-          />
-        </View>
-      </View>
-
-      <View style={styles.sectionHead}>
-        <Text style={[styles.heading, { color: theme.text }]}>Available rides</Text>
-        <Text style={styles.count}>{rides.length}</Text>
-      </View>
-    </>
-  );
-
-  const renderRide = ({ item, index }) => (
-    <StaggeredItem delay={index * 80}>
-      <RideCard
-        ride={item}
-        index={index}
-        onPress={() => navigation.navigate('Ride Details', { rideId: item._id })}
-      />
-    </StaggeredItem>
-  );
-
-  const renderEmpty = () => (
-    <AnimatedEmptyState
-      icon="car-outline"
-      title="No rides available"
-      message="Pull to refresh or create a new ride to get started."
-      actionText="Create Ride"
-      onActionPress={() => navigation.navigate('Create Ride')}
-      iconColor={colors.primary}
-    />
-  );
-
   return (
     <View style={[styles.page, { backgroundColor: theme.background }]}>
       <ScreenContainer scroll={false}>
         <FlatList
-          data={rides}
+          data={filteredRides}
           renderItem={renderRide}
-          keyExtractor={(item, index) => item?._id || String(index)}
+          keyExtractor={keyExtractor}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           refreshing={refreshing}
           onRefresh={onRefresh}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          initialNumToRender={6}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          updateCellsBatchingPeriod={50}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.pageScrollContent, rides.length === 0 && styles.emptyListContent]}
+          contentContainerStyle={[styles.pageScrollContent, filteredRides.length === 0 && styles.emptyListContent]}
         />
       </ScreenContainer>
 
       <Animated.View style={[styles.fabWrap, { transform: [{ scale: fabScale }] }]}>
         <Pressable
           style={styles.fabPress}
-          onPress={() => navigation.navigate('Create Ride')}
+          onPress={goToCreateRide}
           onPressIn={onFabPressIn}
           onPressOut={onFabPressOut}
           accessibilityRole="button"
@@ -246,7 +435,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    position: 'relative'
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4
+  },
+  unreadDotText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800'
   },
   topLabel: {
     color: colors.mutedText,
@@ -286,6 +493,48 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: colors.text
+  },
+  filtersGrid: {
+    marginTop: 12,
+    gap: 10
+  },
+  filterInputWrap: {
+    height: 44,
+    borderWidth: 1,
+    borderRadius: tokens.radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    gap: 8
+  },
+  filterInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  priceRow: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  priceInputWrap: {
+    flex: 1
+  },
+  sortRow: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  sortChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  sortChipText: {
+    fontSize: 13,
+    fontWeight: '700'
   },
   sectionHead: {
     flexDirection: 'row',

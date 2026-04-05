@@ -19,6 +19,7 @@ import tokens from '../theme/tokens';
 import { useChatContext } from '../context/ChatContext';
 import { apiRequest, API_URL } from '../api';
 import { useAuth } from '../context/AuthContext';
+import Toast from 'react-native-toast-message';
 
 /**
  * ChatScreen Component
@@ -26,7 +27,7 @@ import { useAuth } from '../context/AuthContext';
  */
 const ChatScreen = ({ route, navigation }) => {
   const { conversationId, rideId, rideName } = route.params;
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { joinConversation, leaveConversation, sendMessage, markAsRead, isConnected, socket } = useChatContext();
   
   const [messages, setMessages] = useState([]);
@@ -61,7 +62,8 @@ const ChatScreen = ({ route, navigation }) => {
   const loadMessages = async () => {
     try {
       const response = await apiRequest(`/chat/messages/${conversationId}`, {
-        method: 'GET'
+        method: 'GET',
+        token
       });
 
       if (response.messages) {
@@ -69,7 +71,7 @@ const ChatScreen = ({ route, navigation }) => {
         
         // Mark messages as read
         const unreadIds = response.messages
-          .filter(m => !m.readBy.some(r => r.userId === user._id))
+          .filter(m => !m.readBy.some(r => (r?.userId?._id || r?.userId)?.toString() === user._id?.toString()))
           .map(m => m._id);
         
         if (unreadIds.length > 0) {
@@ -78,14 +80,28 @@ const ChatScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Load messages error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Unable to load messages',
+        text2: error?.message || 'Please try again.'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleNewMessage = (data) => {
-    if (data.message.conversationId === conversationId) {
-      setMessages(prev => [...prev, data.message]);
+    const incomingMessage = data?.message || data;
+    const incomingConversationId =
+      incomingMessage?.conversationId?._id || incomingMessage?.conversationId;
+
+    if (String(incomingConversationId) === String(conversationId)) {
+      setMessages(prev => {
+        if (prev.some((existing) => String(existing._id) === String(incomingMessage._id))) {
+          return prev;
+        }
+        return [...prev, incomingMessage];
+      });
       
       // Auto-scroll to bottom
       setTimeout(() => {
@@ -93,8 +109,9 @@ const ChatScreen = ({ route, navigation }) => {
       }, 100);
 
       // Mark as read if not from current user
-      if (data.message.sender._id !== user._id) {
-        markAsRead([data.message._id]);
+      const senderId = incomingMessage?.sender?._id || incomingMessage?.senderId?._id || incomingMessage?.senderId;
+      if (String(senderId) !== String(user._id)) {
+        markAsRead([incomingMessage._id]);
       }
     }
   };
@@ -110,14 +127,27 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isSending || !isConnected) return;
+    if (!inputText.trim() || isSending) return;
 
     const messageText = inputText.trim();
     setInputText('');
     setIsSending(true);
 
     try {
-      await sendMessage(conversationId, 'text', messageText);
+      const sentMessage = await sendMessage(conversationId, 'text', messageText);
+
+      if (sentMessage?._id) {
+        setMessages((previousMessages) => {
+          if (previousMessages.some((existing) => String(existing._id) === String(sentMessage._id))) {
+            return previousMessages;
+          }
+          return [...previousMessages, sentMessage];
+        });
+
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
       
       if (Platform.OS !== 'web' && Haptics?.impactAsync) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -125,6 +155,11 @@ const ChatScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error('Send message error:', error);
       setInputText(messageText); // Restore text on error
+      Toast.show({
+        type: 'error',
+        text1: 'Message failed',
+        text2: error?.message || 'Unable to send message'
+      });
     } finally {
       setIsSending(false);
     }
@@ -255,9 +290,9 @@ const ChatScreen = ({ route, navigation }) => {
         />
 
         <Pressable
-          style={[styles.sendButton, (!inputText.trim() || !isConnected) && styles.sendButtonDisabled]}
+          style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
           onPress={handleSendMessage}
-          disabled={!inputText.trim() || isSending || !isConnected}
+          disabled={!inputText.trim() || isSending}
         >
           {isSending ? (
             <ActivityIndicator size="small" color={colors.white} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,20 +8,41 @@ import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
-import { ProgressBar, SuccessAnimation } from '../components';
+import { ProgressBar, RideCardSkeleton, SuccessAnimation } from '../components';
 import AnimatedReveal from '../components/AnimatedReveal';
+import { useNotifications } from '../context/NotificationContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
 const CreateRideScreen = () => {
+  const { addInAppNotification } = useNotifications();
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [preparing, setPreparing] = useState(true);
   
   const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
+
+  const isPositiveNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0;
+  };
+
+  const isPositiveWholeNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0;
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPreparing(false);
+    }, 220);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const normalizeDateInput = (value) => {
     const raw = String(value || '').trim();
@@ -49,9 +70,46 @@ const CreateRideScreen = () => {
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+
+    const trimmedValue = String(value ?? '').trim();
+    let nextFieldError;
+
+    if (field === 'source' && !trimmedValue) {
+      nextFieldError = 'Source is required';
     }
+
+    if (field === 'destination' && !trimmedValue) {
+      nextFieldError = 'Destination is required';
+    }
+
+    if (field === 'dateTime') {
+      if (!trimmedValue) {
+        nextFieldError = 'Please select date & time';
+      } else if (!toIsoDateTime(trimmedValue)) {
+        nextFieldError = 'Please select date & time';
+      }
+    }
+
+    if (field === 'price') {
+      if (!trimmedValue) {
+        nextFieldError = 'Price is required';
+      } else if (!isPositiveNumber(trimmedValue)) {
+        nextFieldError = 'Price must be greater than 0';
+      }
+    }
+
+    if (field === 'seatsAvailable') {
+      if (!trimmedValue) {
+        nextFieldError = 'Seats are required';
+      } else if (!isPositiveWholeNumber(trimmedValue)) {
+        nextFieldError = 'Seats must be a positive whole number';
+      }
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: nextFieldError
+    }));
   };
 
   const validateForm = ({ source, destination, dateTime, price, seatsAvailable }) => {
@@ -82,6 +140,15 @@ const CreateRideScreen = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const isFormValid =
+    form.source.trim().length > 0 &&
+    form.destination.trim().length > 0 &&
+    form.dateTime.trim().length > 0 &&
+    Boolean(toIsoDateTime(form.dateTime)) &&
+    isPositiveNumber(form.price) &&
+    isPositiveWholeNumber(form.seatsAvailable) &&
+    !loading;
+
   const handleCreate = async () => {
     const source = form.source.trim();
     const destination = form.destination.trim();
@@ -106,7 +173,7 @@ const CreateRideScreen = () => {
         console.log('[CreateRide] Posting ride', { source, destination, dateTime: isoDateTime, price, seatsAvailable });
       }
 
-      await apiRequest('/rides', {
+      const response = await apiRequest('/rides', {
         method: 'POST',
         token,
         body: {
@@ -117,6 +184,14 @@ const CreateRideScreen = () => {
           seatsAvailable
         }
       });
+
+      addInAppNotification({
+        type: 'ride_created',
+        title: 'Ride Created',
+        message: `${source} → ${destination} is now live.`,
+        rideId: response?.data?._id || null
+      });
+
       Toast.show({ type: 'success', text1: 'Ride created successfully' });
       setForm({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
     } catch (error) {
@@ -126,8 +201,19 @@ const CreateRideScreen = () => {
     }
   };
 
+  if (preparing) {
+    return (
+      <ScreenContainer contentContainerStyle={styles.screenContent}>
+        <View style={styles.card}>
+          <RideCardSkeleton />
+          <RideCardSkeleton />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
   return (
-    <ScreenContainer>
+    <ScreenContainer contentContainerStyle={styles.screenContent}>
       <AnimatedReveal>
         <View style={styles.card}>
           <LinearGradient colors={['rgba(37,99,235,0.14)', 'rgba(124,58,237,0.1)']} style={styles.cardGlow} />
@@ -166,7 +252,7 @@ const CreateRideScreen = () => {
             onPress={handleCreate}
             loading={loading}
             icon="paper-plane-outline"
-            disabled={loading || !form.source.trim() || !form.destination.trim() || !form.dateTime.trim() || !form.price.trim() || !form.seatsAvailable.trim()}
+            disabled={!isFormValid}
           />
         </View>
       </AnimatedReveal>
@@ -175,6 +261,9 @@ const CreateRideScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: tokens.spacing['4xl']
+  },
   card: {
     backgroundColor: 'rgba(255,255,255,0.88)',
     borderRadius: tokens.radius.xl,

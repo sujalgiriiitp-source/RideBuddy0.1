@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { memo, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -126,6 +126,35 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   );
 };
 
+const areEqualRideCardProps = (prevProps, nextProps) => {
+  const prevRide = prevProps.ride || {};
+  const nextRide = nextProps.ride || {};
+
+  const didBasePropsChange =
+    prevProps.actionLabel !== nextProps.actionLabel ||
+    prevProps.index !== nextProps.index ||
+    prevProps.highlight !== nextProps.highlight ||
+    Boolean(prevProps.onPress) !== Boolean(nextProps.onPress);
+
+  if (didBasePropsChange) {
+    return false;
+  }
+
+  return (
+    prevRide._id === nextRide._id &&
+    prevRide.source === nextRide.source &&
+    prevRide.destination === nextRide.destination &&
+    prevRide.dateTime === nextRide.dateTime &&
+    prevRide.date === nextRide.date &&
+    prevRide.price === nextRide.price &&
+    prevRide.seatsAvailable === nextRide.seatsAvailable &&
+    prevRide.availableSeats === nextRide.availableSeats &&
+    prevRide.seats === nextRide.seats &&
+    prevRide?.createdBy?.name === nextRide?.createdBy?.name &&
+    prevRide?.user?.name === nextRide?.user?.name
+  );
+};
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
@@ -250,4 +279,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default RideCard;
+export default memo(RideCard, areEqualRideCardProps);

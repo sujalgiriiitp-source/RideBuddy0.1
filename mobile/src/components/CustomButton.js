@@ -58,7 +58,13 @@ const CustomButton = ({
         onPressIn={() => animateTo(0.97, true)}
         onPressOut={() => animateTo(1)}
         disabled={isDisabled}
-        style={[styles.button, variantContainerStyle, isDisabled && styles.buttonDisabled]}
+        style={({ pressed, hovered }) => [
+          styles.button,
+          variantContainerStyle,
+          hovered && !isDisabled && styles.buttonHovered,
+          pressed && !isDisabled && styles.buttonPressed,
+          isDisabled && styles.buttonDisabled
+        ]}
       >
         {isSecondary ? (
           loading ? (
@@ -124,6 +130,12 @@ const styles = StyleSheet.create({
     opacity: 0.72,
     shadowOpacity: 0.02,
     elevation: 1
+  },
+  buttonHovered: {
+    opacity: 0.96
+  },
+  buttonPressed: {
+    opacity: 0.9
   },
   text: {
     fontSize: 16,
