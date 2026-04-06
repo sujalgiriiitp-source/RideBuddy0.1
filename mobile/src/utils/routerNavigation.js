@@ -11,6 +11,20 @@ const buildHref = (name, params = {}) => {
       return '/login';
     case 'Signup':
       return '/signup';
+    case 'Verify Email': {
+      const email = normalizeParam(params?.email);
+      if (!email) {
+        return '/verify-email';
+      }
+      return {
+        pathname: '/verify-email',
+        params: { email: String(email) }
+      };
+    }
+    case 'Forgot Password':
+      return '/forgot-password';
+    case 'Reset Password':
+      return '/reset-password';
     case 'Main':
     case 'Home':
       return '/(tabs)/home';

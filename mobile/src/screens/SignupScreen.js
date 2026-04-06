@@ -13,7 +13,7 @@ import tokens from '../theme/tokens';
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const SignupScreen = () => {
+const SignupScreen = ({ navigation }) => {
   const { signup } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,8 @@ const SignupScreen = () => {
         password,
         phone
       });
-      Toast.show({ type: 'success', text1: 'Signup successful ✅' });
+      Toast.show({ type: 'success', text1: 'Signup successful', text2: 'Please verify your email to continue.' });
+      navigation.replace('Verify Email', { email });
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Signup failed', text2: error.message || 'Failed to connect' });
     } finally {

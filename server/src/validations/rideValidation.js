@@ -1,5 +1,33 @@
 const Joi = require('joi');
 
+const MIN_RIDE_DATE = new Date('2024-01-01T00:00:00.000Z');
+
+const rideDateTimeSchema = Joi.date()
+  .iso()
+  .required()
+  .custom((value, helpers) => {
+    const parsedDate = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return helpers.error('any.invalid', { message: 'Date & time must be valid' });
+    }
+
+    if (parsedDate.getTime() < MIN_RIDE_DATE.getTime()) {
+      return helpers.error('any.invalid', { message: 'Ride date must be in year 2024 or later' });
+    }
+
+    if (parsedDate.getTime() < Date.now()) {
+      return helpers.error('any.invalid', { message: 'Ride date cannot be in the past' });
+    }
+
+    return parsedDate;
+  })
+  .messages({
+    'date.base': 'Date & time must be valid',
+    'date.format': 'Date & time must be in ISO format',
+    'any.invalid': '{{#message}}'
+  });
+
 const createRideSchema = Joi.object({
   pickup: Joi.string().trim(),
   drop: Joi.string().trim(),
@@ -16,7 +44,7 @@ const createRideSchema = Joi.object({
   routePolyline: Joi.array().items(Joi.array().items(Joi.number()).length(2)).optional(),
   distance: Joi.number().min(0).optional(),
   estimatedDuration: Joi.number().min(0).optional(),
-  dateTime: Joi.date().iso().required(),
+  dateTime: rideDateTimeSchema,
   price: Joi.number().min(0).required(),
   seatsAvailable: Joi.number().integer().min(1).required()
 })

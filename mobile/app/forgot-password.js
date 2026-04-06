@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { Redirect, useRouter } from 'expo-router';
-import SignupScreen from '../src/screens/SignupScreen';
+import ForgotPasswordScreen from '../src/screens/ForgotPasswordScreen';
 import { useAuth } from '../src/context/AuthContext';
 import { createLegacyNavigation } from '../src/utils/routerNavigation';
 
-export default function SignupRoute() {
+export default function ForgotPasswordRoute() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const navigation = useMemo(() => createLegacyNavigation(router), [router]);
@@ -13,5 +13,5 @@ export default function SignupRoute() {
     return <Redirect href="/(tabs)/home" />;
   }
 
-  return <SignupScreen navigation={navigation} />;
+  return <ForgotPasswordScreen navigation={navigation} />;
 }

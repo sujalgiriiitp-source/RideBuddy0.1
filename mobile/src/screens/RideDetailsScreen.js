@@ -12,19 +12,7 @@ import AnimatedReveal from '../components/AnimatedReveal';
 import { useNotifications } from '../context/NotificationContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
-
-const formatDisplayDate = (value) => {
-  if (!value) {
-    return 'Date not available';
-  }
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'Date not available';
-  }
-
-  return parsedDate.toLocaleString();
-};
+import { formatReadableDateTime } from '../utils/dateTime';
 
 const extractApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
   return (
@@ -223,7 +211,7 @@ const RideDetailsScreen = ({ route }) => {
             <Text style={styles.route}>{ride.source || ride.from} → {ride.destination || ride.to}</Text>
             <View style={styles.metaRow}>
               <Ionicons name="time-outline" size={16} color={colors.mutedText} />
-              <Text style={styles.meta}>{formatDisplayDate(ride.dateTime || ride.date)}</Text>
+              <Text style={styles.meta}>{formatReadableDateTime(ride.dateTime || ride.date)}</Text>
             </View>
             <View style={styles.statsRow}>
               <Text style={styles.price}>₹{ride.price ?? 0}</Text>

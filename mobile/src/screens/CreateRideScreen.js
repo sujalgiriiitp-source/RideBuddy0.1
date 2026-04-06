@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { apiRequest } from '../api';
@@ -13,6 +14,12 @@ import AnimatedReveal from '../components/AnimatedReveal';
 import { useNotifications } from '../context/NotificationContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
+import {
+  formatReadableDateTime,
+  getMinimumRideDate,
+  getRideDateValidationError,
+  parseDateValue
+} from '../utils/dateTime';
 
 const CreateRideScreen = () => {
   const { addInAppNotification } = useNotifications();
@@ -22,9 +29,15 @@ const CreateRideScreen = () => {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [preparing, setPreparing] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
+  const minimumRideDate = useMemo(() => getMinimumRideDate(), []);
+  const selectedDate = useMemo(
+    () => parseDateValue(form.dateTime) || minimumRideDate,
+    [form.dateTime, minimumRideDate]
+  );
 
   const isPositiveNumber = (value) => {
     const parsed = Number(value);
@@ -44,30 +57,6 @@ const CreateRideScreen = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const normalizeDateInput = (value) => {
-    const raw = String(value || '').trim();
-
-    if (!raw) {
-      return '';
-    }
-
-    return raw.replace(' ', 'T');
-  };
-
-  const toIsoDateTime = (value) => {
-    const normalized = normalizeDateInput(value);
-    if (!normalized) {
-      return '';
-    }
-
-    const parsed = new Date(normalized);
-    if (Number.isNaN(parsed.getTime())) {
-      return '';
-    }
-
-    return parsed.toISOString();
-  };
-
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -85,8 +74,8 @@ const CreateRideScreen = () => {
     if (field === 'dateTime') {
       if (!trimmedValue) {
         nextFieldError = 'Please select date & time';
-      } else if (!toIsoDateTime(trimmedValue)) {
-        nextFieldError = 'Please select date & time';
+      } else {
+        nextFieldError = getRideDateValidationError(trimmedValue) || undefined;
       }
     }
 
@@ -124,8 +113,11 @@ const CreateRideScreen = () => {
 
     if (!dateTime) {
       nextErrors.dateTime = 'Please select date & time';
-    } else if (!toIsoDateTime(dateTime)) {
-      nextErrors.dateTime = 'Please select date & time';
+    } else {
+      const dateError = getRideDateValidationError(dateTime);
+      if (dateError) {
+        nextErrors.dateTime = dateError;
+      }
     }
 
     if (!Number.isFinite(price) || price <= 0) {
@@ -144,16 +136,29 @@ const CreateRideScreen = () => {
     form.source.trim().length > 0 &&
     form.destination.trim().length > 0 &&
     form.dateTime.trim().length > 0 &&
-    Boolean(toIsoDateTime(form.dateTime)) &&
+    !getRideDateValidationError(form.dateTime) &&
     isPositiveNumber(form.price) &&
     isPositiveWholeNumber(form.seatsAvailable) &&
     !loading;
 
+  const handleDateChange = (_, dateValue) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (!dateValue) {
+      return;
+    }
+
+    setField('dateTime', dateValue.toISOString());
+  };
+
   const handleCreate = async () => {
     const source = form.source.trim();
     const destination = form.destination.trim();
-    const dateTime = normalizeDateInput(form.dateTime);
-    const isoDateTime = toIsoDateTime(dateTime);
+    const dateTime = form.dateTime.trim();
+    const parsedDate = parseDateValue(dateTime);
+    const isoDateTime = parsedDate ? parsedDate.toISOString() : '';
     const price = Number(form.price);
     const seatsAvailable = Number(form.seatsAvailable);
 
@@ -229,14 +234,42 @@ const CreateRideScreen = () => {
 
           <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
           <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} icon="location-outline" />
-          <InputField
-            label="Date & Time"
-            value={form.dateTime}
-            onChangeText={(value) => setField('dateTime', value)}
-            placeholder="YYYY-MM-DD HH:mm"
-            error={errors.dateTime}
-            icon="calendar-outline"
-          />
+          <View style={styles.dateFieldWrap}>
+            <Text style={styles.dateFieldLabel}>Date & Time</Text>
+            <Pressable
+              style={styles.dateFieldButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <View style={styles.dateFieldIconWrap}>
+                <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+              </View>
+              <Text style={[styles.dateFieldValue, !form.dateTime && styles.dateFieldPlaceholder]}>
+                {form.dateTime ? formatReadableDateTime(form.dateTime) : 'Select date & time'}
+              </Text>
+            </Pressable>
+            {!!errors.dateTime && <Text style={styles.dateFieldError}>{errors.dateTime}</Text>}
+          </View>
+
+          {showDatePicker ? (
+            <DateTimePicker
+              value={selectedDate}
+              mode="datetime"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              minimumDate={minimumRideDate}
+              onChange={handleDateChange}
+            />
+          ) : null}
+
+          {Platform.OS === 'ios' && showDatePicker ? (
+            <View style={styles.iosPickerActions}>
+              <CustomButton
+                title="Done"
+                onPress={() => setShowDatePicker(false)}
+                variant="secondary"
+              />
+            </View>
+          ) : null}
+
           <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" />
           <InputField
             label="Seats Available"
@@ -307,7 +340,53 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     maxWidth: 260
   },
-
+  dateFieldWrap: {
+    marginBottom: 16
+  },
+  dateFieldLabel: {
+    marginBottom: 8,
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  dateFieldButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 56,
+    borderWidth: 1,
+    borderColor: '#D9E3F8',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: tokens.radius.lg,
+    paddingHorizontal: 14,
+    ...tokens.shadows.soft
+  },
+  dateFieldIconWrap: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    width: 24,
+    height: 24
+  },
+  dateFieldValue: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '500',
+    lineHeight: 20
+  },
+  dateFieldPlaceholder: {
+    color: '#9AA4B2'
+  },
+  dateFieldError: {
+    marginTop: 7,
+    marginLeft: 2,
+    color: colors.danger,
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  iosPickerActions: {
+    marginBottom: 12
+  }
 });
 
 export default CreateRideScreen;

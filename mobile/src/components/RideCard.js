@@ -7,19 +7,7 @@ import CustomButton from './CustomButton';
 import AnimatedReveal from './AnimatedReveal';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
-
-const formatDateTime = (value) => {
-  if (!value) {
-    return 'Date not available';
-  }
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'Date not available';
-  }
-
-  return parsedDate.toLocaleString();
-};
+import { formatReadableDateTime } from '../utils/dateTime';
 
 const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -98,7 +86,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
 
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={16} color={colors.mutedText} />
-            <Text style={styles.meta}>{formatDateTime(dateTime)}</Text>
+            <Text style={styles.meta}>{formatReadableDateTime(dateTime)}</Text>
           </View>
 
           <View style={styles.bottomRow}>

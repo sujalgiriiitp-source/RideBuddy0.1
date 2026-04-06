@@ -47,7 +47,16 @@ const LoginScreen = ({ navigation }) => {
       await login(email.trim(), password);
       Toast.show({ type: 'success', text1: 'Welcome back!' });
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Login failed', text2: error.message });
+      if (error?.code === 'EMAIL_NOT_VERIFIED') {
+        navigation.replace('Verify Email', { email: error?.email || email.trim().toLowerCase() });
+        Toast.show({
+          type: 'info',
+          text1: 'Email verification required',
+          text2: 'Please verify your email before logging in.'
+        });
+      } else {
+        Toast.show({ type: 'error', text1: 'Login failed', text2: error.message });
+      }
     } finally {
       setLoading(false);
     }
@@ -104,6 +113,14 @@ const LoginScreen = ({ navigation }) => {
             fullWidth
           />
           <PremiumButton
+            title="Forgot Password?"
+            onPress={() => navigation.navigate('Forgot Password')}
+            variant="secondary"
+            icon="help-circle-outline"
+            fullWidth
+            style={styles.forgotCta}
+          />
+          <PremiumButton
             title="Create Account"
             onPress={() => navigation.navigate('Signup')}
             variant="secondary"
@@ -149,6 +166,9 @@ const styles = StyleSheet.create({
   },
   secondaryCta: {
     marginTop: tokens.spacing.md
+  },
+  forgotCta: {
+    marginTop: tokens.spacing.sm
   }
 });
 

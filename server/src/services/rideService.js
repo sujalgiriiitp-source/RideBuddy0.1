@@ -21,6 +21,19 @@ const emitRideEvent = (rideId, eventName, payload) => {
 const createRide = async ({ userId, pickup, drop, source, destination, dateTime, price, seatsAvailable }) => {
   const resolvedPickup = pickup || source;
   const resolvedDrop = drop || destination;
+  const parsedRideDate = new Date(dateTime);
+
+  if (Number.isNaN(parsedRideDate.getTime())) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Date & time must be valid');
+  }
+
+  if (parsedRideDate.getFullYear() < 2024) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride date must be in year 2024 or later');
+  }
+
+  if (parsedRideDate.getTime() < Date.now()) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride date cannot be in the past');
+  }
 
   const ride = await Ride.create({
     pickup: resolvedPickup,
@@ -30,7 +43,7 @@ const createRide = async ({ userId, pickup, drop, source, destination, dateTime,
     createdBy: userId,
     source: resolvedPickup,
     destination: resolvedDrop,
-    dateTime,
+    dateTime: parsedRideDate,
     price,
     seatsAvailable,
     passengers: []
