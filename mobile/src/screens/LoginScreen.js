@@ -47,16 +47,7 @@ const LoginScreen = ({ navigation }) => {
       await login(email.trim(), password);
       Toast.show({ type: 'success', text1: 'Welcome back!' });
     } catch (error) {
-      if (error?.code === 'EMAIL_NOT_VERIFIED') {
-        navigation.replace('Verify Email', { email: error?.email || email.trim().toLowerCase() });
-        Toast.show({
-          type: 'info',
-          text1: 'Email verification required',
-          text2: 'Please verify your email before logging in.'
-        });
-      } else {
-        Toast.show({ type: 'error', text1: 'Login failed', text2: error.message });
-      }
+      Toast.show({ type: 'error', text1: 'Login failed', text2: error.message });
     } finally {
       setLoading(false);
     }

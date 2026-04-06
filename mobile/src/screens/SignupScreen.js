@@ -68,8 +68,7 @@ const SignupScreen = ({ navigation }) => {
         password,
         phone
       });
-      Toast.show({ type: 'success', text1: 'Signup successful', text2: 'Please verify your email to continue.' });
-      navigation.replace('Verify Email', { email });
+      Toast.show({ type: 'success', text1: 'Signup successful ✅' });
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Signup failed', text2: error.message || 'Failed to connect' });
     } finally {

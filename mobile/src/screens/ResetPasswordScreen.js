@@ -8,40 +8,64 @@ import ScreenTransition from '../components/ScreenTransition';
 import PremiumCard from '../components/PremiumCard';
 import PremiumInput from '../components/PremiumInput';
 import PremiumButton from '../components/PremiumButton';
-import {
-  restoreRecoverySessionFromUrl,
-  updatePassword
-} from '../services/supabaseAuthService';
+import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
+const extractResetToken = (url) => {
+  if (!url) {
+    return '';
+  }
+
+  const parsed = Linking.parse(url);
+  const queryToken = parsed?.queryParams?.token;
+  if (queryToken) {
+    return String(queryToken);
+  }
+
+  const hashIndex = url.indexOf('#');
+  if (hashIndex >= 0) {
+    const hashPart = url.slice(hashIndex + 1);
+    const hashParams = new URLSearchParams(hashPart);
+    const hashToken = hashParams.get('token');
+    if (hashToken) {
+      return String(hashToken);
+    }
+  }
+
+  return '';
+};
+
 const ResetPasswordScreen = ({ navigation }) => {
+  const { resetPassword } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [preparing, setPreparing] = useState(true);
-  const [linkReady, setLinkReady] = useState(false);
+  const [resetToken, setResetToken] = useState('');
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     let isMounted = true;
 
-    const prepareRecoverySession = async () => {
+    const resolveToken = async (url) => {
+      const token = extractResetToken(url);
+      if (token) {
+        setResetToken(token);
+      }
+      return Boolean(token);
+    };
+
+    const prepareResetToken = async () => {
       try {
         const initialUrl = await Linking.getInitialURL();
-        const recoveredFromInitial = await restoreRecoverySessionFromUrl(initialUrl);
+        const hasToken = await resolveToken(initialUrl);
 
-        if (isMounted && recoveredFromInitial) {
-          setLinkReady(true);
+        if (isMounted && hasToken) {
           return;
-        }
-
-        if (isMounted) {
-          setLinkReady(false);
         }
       } catch (error) {
         if (isMounted) {
-          setLinkReady(false);
           Toast.show({ type: 'error', text1: 'Invalid reset link', text2: error.message });
         }
       } finally {
@@ -52,17 +76,10 @@ const ResetPasswordScreen = ({ navigation }) => {
     };
 
     const subscription = Linking.addEventListener('url', async ({ url }) => {
-      try {
-        const recovered = await restoreRecoverySessionFromUrl(url);
-        if (recovered) {
-          setLinkReady(true);
-        }
-      } catch (error) {
-        Toast.show({ type: 'error', text1: 'Invalid reset link', text2: error.message });
-      }
+      await resolveToken(url);
     });
 
-    prepareRecoverySession();
+    prepareResetToken();
 
     return () => {
       isMounted = false;
@@ -95,14 +112,14 @@ const ResetPasswordScreen = ({ navigation }) => {
       return;
     }
 
-    if (!linkReady) {
+    if (!resetToken) {
       Toast.show({ type: 'error', text1: 'Reset link missing', text2: 'Please open the reset link from your email.' });
       return;
     }
 
     try {
       setLoading(true);
-      await updatePassword(password);
+      await resetPassword({ token: resetToken, password });
       Toast.show({ type: 'success', text1: 'Password updated', text2: 'You can now login with your new password.' });
       navigation.replace('Login');
     } catch (error) {
@@ -136,7 +153,7 @@ const ResetPasswordScreen = ({ navigation }) => {
         </View>
 
         <PremiumCard glass elevation="md">
-          {!linkReady ? (
+          {!resetToken ? (
             <Text style={styles.infoText}>Open the password reset link from your email on this device first.</Text>
           ) : null}
           <PremiumInput
