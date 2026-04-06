@@ -5,8 +5,7 @@ const conversationSchema = new mongoose.Schema(
     rideId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Ride',
-      required: true,
-      unique: true
+      required: true
     },
     participants: [
       {

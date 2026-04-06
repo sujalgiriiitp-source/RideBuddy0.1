@@ -90,8 +90,10 @@ const ConversationList = ({ navigation }) => {
 
     navigation.navigate('ChatScreen', {
       conversationId: conversation._id,
-      rideId: conversation.rideId._id,
-      rideName: `${conversation.rideId.source} → ${conversation.rideId.destination}`
+      rideId: conversation?.rideId?._id || conversation?.rideId,
+      rideName:
+        conversation?.otherParticipant?.name ||
+        `${conversation?.rideId?.source || 'Ride'} → ${conversation?.rideId?.destination || ''}`
     });
   };
 
@@ -132,7 +134,7 @@ const ConversationList = ({ navigation }) => {
       <View style={styles.conversationContent}>
         <View style={styles.conversationHeader}>
           <Text style={styles.rideName} numberOfLines={1}>
-            {item.rideId?.source} → {item.rideId?.destination}
+            {item?.otherParticipant?.name || `${item?.rideId?.source || 'Ride'} → ${item?.rideId?.destination || ''}`}
           </Text>
           {item.lastMessage?.timestamp && (
             <Text style={styles.timestamp}>

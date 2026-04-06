@@ -1,5 +1,28 @@
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
+
+const onlineUsers = new Map();
+
+const incrementOnlineUser = (userId) => {
+  const key = String(userId);
+  const current = onlineUsers.get(key) || 0;
+  onlineUsers.set(key, current + 1);
+  return current === 0;
+};
+
+const decrementOnlineUser = (userId) => {
+  const key = String(userId);
+  const current = onlineUsers.get(key) || 0;
+  if (current <= 1) {
+    onlineUsers.delete(key);
+    return true;
+  }
+
+  onlineUsers.set(key, current - 1);
+  return false;
+};
 
 /**
  * Chat Socket Handler
@@ -10,6 +33,26 @@ const setupChatSocket = (io) => {
 
   chatNamespace.on('connection', (socket) => {
     console.log(`Chat client connected: ${socket.id}`);
+
+    const authToken = socket.handshake?.auth?.token;
+    if (authToken) {
+      try {
+        const decoded = jwt.verify(authToken, env.jwtSecret);
+        const connectedUserId = String(decoded.userId);
+        socket.userId = connectedUserId;
+        socket.join(`user:${connectedUserId}`);
+
+        const becameOnline = incrementOnlineUser(connectedUserId);
+        if (becameOnline) {
+          chatNamespace.emit('chat:user:online-status', {
+            userId: connectedUserId,
+            isOnline: true
+          });
+        }
+      } catch (error) {
+        console.log('Chat socket auth token invalid');
+      }
+    }
 
     // Join conversation room
     socket.on('chat:join', async ({ conversationId, userId }) => {
@@ -142,6 +185,16 @@ const setupChatSocket = (io) => {
 
     // Disconnect
     socket.on('disconnect', () => {
+      if (socket.userId) {
+        const becameOffline = decrementOnlineUser(socket.userId);
+        if (becameOffline) {
+          chatNamespace.emit('chat:user:online-status', {
+            userId: socket.userId,
+            isOnline: false
+          });
+        }
+      }
+
       console.log(`Chat client disconnected: ${socket.id}`);
     });
   });

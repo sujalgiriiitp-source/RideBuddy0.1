@@ -3,6 +3,86 @@ const Message = require('../models/Message');
 const Ride = require('../models/Ride');
 const { StatusCodes } = require('http-status-codes');
 
+const asObjectIdString = (value) => String(value || '');
+
+const buildOtherParticipant = (participants, userId) => {
+  return participants.find((participant) => asObjectIdString(participant?._id || participant) !== asObjectIdString(userId)) || null;
+};
+
+/**
+ * Start or get conversation between logged in user and driver for a ride
+ */
+const startConversation = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { rideId, driverId } = req.body;
+
+    if (!rideId || !driverId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'rideId and driverId are required'
+      });
+    }
+
+    const ride = await Ride.findById(rideId).populate('createdBy', 'name email phone');
+    if (!ride) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Ride not found'
+      });
+    }
+
+    if (asObjectIdString(userId) === asObjectIdString(driverId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'You cannot start chat with yourself'
+      });
+    }
+
+    if (asObjectIdString(ride.createdBy?._id || ride.createdBy) !== asObjectIdString(driverId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Provided driver does not match this ride'
+      });
+    }
+
+    let conversation = await Conversation.findOne({
+      rideId,
+      participants: { $all: [userId, driverId] },
+      $expr: { $eq: [{ $size: '$participants' }, 2] }
+    })
+      .populate('participants', 'name email')
+      .populate('rideId', 'source destination dateTime price createdBy');
+
+    if (!conversation) {
+      conversation = await Conversation.create({
+        rideId,
+        participants: [userId, driverId],
+        lastMessage: {
+          text: '',
+          senderId: userId,
+          timestamp: new Date(),
+          messageType: 'text'
+        }
+      });
+
+      await conversation.populate('participants', 'name email');
+      await conversation.populate('rideId', 'source destination dateTime price createdBy');
+    }
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      conversation
+    });
+  } catch (error) {
+    console.error('Start conversation error:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to start conversation'
+    });
+  }
+};
+
 /**
  * Get or create conversation for a ride
  */
@@ -20,25 +100,26 @@ const getOrCreateConversation = async (req, res) => {
       });
     }
 
-    // Check if user is participant (creator or passenger)
-    const isParticipant = 
-      ride.createdBy.toString() === userId.toString() ||
-      ride.passengers.some(p => p.toString() === userId.toString());
+    const driverId = ride.createdBy;
 
-    if (!isParticipant) {
-      return res.status(StatusCodes.FORBIDDEN).json({
+    if (asObjectIdString(driverId) === asObjectIdString(userId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'You are not a participant in this ride'
+        message: 'Driver cannot open a self conversation'
       });
     }
 
     // Find or create conversation
-    let conversation = await Conversation.findOne({ rideId })
+    let conversation = await Conversation.findOne({
+      rideId,
+      participants: { $all: [userId, driverId] },
+      $expr: { $eq: [{ $size: '$participants' }, 2] }
+    })
       .populate('participants', 'name email');
 
     if (!conversation) {
-      // Create new conversation with all participants
-      const participants = [ride.createdBy, ...ride.passengers];
+      // Create new direct conversation between passenger and driver
+      const participants = [userId, driverId];
       conversation = await Conversation.create({
         rideId,
         participants
@@ -82,9 +163,17 @@ const getUserConversations = async (req, res) => {
       conversations.map(async (conv) => {
         const unreadCount = await Message.countDocuments({
           conversationId: conv._id,
+          senderId: { $ne: userId },
           'readBy.userId': { $ne: userId }
         });
-        return { ...conv, unreadCount };
+
+        const otherParticipant = buildOtherParticipant(conv.participants || [], userId);
+
+        return {
+          ...conv,
+          otherParticipant,
+          unreadCount
+        };
       })
     );
 
@@ -143,6 +232,28 @@ const getMessages = async (req, res) => {
       .limit(parseInt(limit))
       .lean();
 
+    const messageIdsToMarkRead = messages
+      .filter(
+        (message) =>
+          asObjectIdString(message.senderId?._id || message.senderId) !== asObjectIdString(userId) &&
+          !message.readBy.some((entry) => asObjectIdString(entry?.userId?._id || entry?.userId) === asObjectIdString(userId))
+      )
+      .map((message) => message._id);
+
+    if (messageIdsToMarkRead.length > 0) {
+      await Message.updateMany(
+        {
+          _id: { $in: messageIdsToMarkRead },
+          'readBy.userId': { $ne: userId }
+        },
+        {
+          $push: {
+            readBy: { userId, readAt: new Date() }
+          }
+        }
+      );
+    }
+
     res.status(StatusCodes.OK).json({
       success: true,
       messages: messages.reverse() // Return in chronological order
@@ -161,8 +272,16 @@ const getMessages = async (req, res) => {
  */
 const sendMessage = async (req, res) => {
   try {
-    const { conversationId, messageType, content, metadata } = req.body;
+    const { conversationId, messageType = 'text', content, text, metadata } = req.body;
     const senderId = req.user._id;
+    const messageContent = String(content || text || '').trim();
+
+    if (!conversationId || !messageContent) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'conversationId and text are required'
+      });
+    }
 
     // Verify conversation exists and user is participant
     const conversation = await Conversation.findById(conversationId);
@@ -189,7 +308,7 @@ const sendMessage = async (req, res) => {
       conversationId,
       senderId,
       messageType,
-      content,
+      content: messageContent,
       metadata,
       readBy: [{ userId: senderId, readAt: new Date() }]
     });
@@ -199,7 +318,7 @@ const sendMessage = async (req, res) => {
     // Update conversation's last message
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: {
-        text: messageType === 'text' ? content : `Sent a ${messageType}`,
+        text: messageType === 'text' ? messageContent : `Sent a ${messageType}`,
         senderId,
         timestamp: message.createdAt,
         messageType
@@ -254,6 +373,7 @@ const markMessagesAsRead = async (req, res) => {
 };
 
 module.exports = {
+  startConversation,
   getOrCreateConversation,
   getUserConversations,
   getMessages,

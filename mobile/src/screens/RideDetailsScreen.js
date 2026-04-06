@@ -181,12 +181,23 @@ const RideDetailsScreen = ({ route }) => {
         throw new Error('Please login again to open chat');
       }
 
-      const response = await apiRequest(`/chat/conversations/${rideId}`, {
-        method: 'GET',
+      const driverId = ride?.createdBy?._id || ride?.createdBy?.id || ride?.createdBy;
+
+      if (!driverId) {
+        throw new Error('Driver information is missing for this ride');
+      }
+
+      const response = await apiRequest('/conversations', {
+        method: 'POST',
         token
+        ,
+        body: {
+          rideId,
+          driverId
+        }
       });
 
-      const conversation = response?.conversation;
+      const conversation = response?.conversation || response?.data;
       if (!conversation?._id) {
         throw new Error('Unable to open conversation');
       }

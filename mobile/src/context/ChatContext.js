@@ -24,7 +24,7 @@ export const useChatContext = () => {
 
 export const ChatProvider = ({ children }) => {
   const { user, token } = useAuth();
-  const userId = user?._id;
+  const userId = user?._id || user?.id;
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -141,7 +141,8 @@ export const ChatProvider = ({ children }) => {
     });
 
     // Increment unread count if not from current user
-    if (message.sender._id !== user?._id) {
+    const senderId = message?.sender?._id || message?.senderId?._id || message?.senderId;
+    if (String(senderId) !== String(userId)) {
       setUnreadCount(prev => prev + 1);
     }
   };
@@ -157,7 +158,7 @@ export const ChatProvider = ({ children }) => {
     if (socket && isConnected) {
       socket.emit('chat:join', {
         conversationId,
-        userId: user._id
+        userId
       });
     }
   };
@@ -175,7 +176,7 @@ export const ChatProvider = ({ children }) => {
       return new Promise((resolve) => {
         socket.emit('chat:message:send', {
           conversationId,
-          senderId: user._id,
+          senderId: userId,
           messageType,
           content,
           metadata
@@ -200,7 +201,7 @@ export const ChatProvider = ({ children }) => {
       }
     });
 
-    return response?.message || null;
+    return response?.message || response?.data || null;
   };
 
   // Mark messages as read
@@ -209,7 +210,7 @@ export const ChatProvider = ({ children }) => {
 
     socket.emit('chat:message:read', {
       messageIds,
-      userId: user._id
+      userId
     });
 
     // Decrease unread count
@@ -221,7 +222,7 @@ export const ChatProvider = ({ children }) => {
     if (socket && isConnected) {
       socket.emit('chat:typing', {
         conversationId,
-        userId: user._id,
+        userId,
         isTyping
       });
     }

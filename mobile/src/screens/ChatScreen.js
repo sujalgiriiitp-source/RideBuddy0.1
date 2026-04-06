@@ -28,6 +28,7 @@ import Toast from 'react-native-toast-message';
 const ChatScreen = ({ route, navigation }) => {
   const { conversationId, rideId, rideName } = route.params;
   const { user, token } = useAuth();
+  const userId = user?._id || user?.id;
   const { joinConversation, leaveConversation, sendMessage, markAsRead, isConnected, socket } = useChatContext();
   
   const [messages, setMessages] = useState([]);
@@ -71,7 +72,14 @@ const ChatScreen = ({ route, navigation }) => {
         
         // Mark messages as read
         const unreadIds = response.messages
-          .filter(m => !m.readBy.some(r => (r?.userId?._id || r?.userId)?.toString() === user._id?.toString()))
+          .filter(m => {
+            const senderId = m?.senderId?._id || m?.senderId;
+            if (String(senderId) === String(userId)) {
+              return false;
+            }
+
+            return !m.readBy.some(r => (r?.userId?._id || r?.userId)?.toString() === String(userId));
+          })
           .map(m => m._id);
         
         if (unreadIds.length > 0) {
@@ -110,14 +118,14 @@ const ChatScreen = ({ route, navigation }) => {
 
       // Mark as read if not from current user
       const senderId = incomingMessage?.sender?._id || incomingMessage?.senderId?._id || incomingMessage?.senderId;
-      if (String(senderId) !== String(user._id)) {
+      if (String(senderId) !== String(userId)) {
         markAsRead([incomingMessage._id]);
       }
     }
   };
 
   const handleTyping = (data) => {
-    if (data.userId !== user._id) {
+    if (String(data.userId) !== String(userId)) {
       if (data.isTyping) {
         setTypingUsers(prev => [...prev, data.userId]);
       } else {
@@ -199,15 +207,17 @@ const ChatScreen = ({ route, navigation }) => {
   };
 
   const renderMessage = ({ item, index }) => {
-    const isOwnMessage = item.senderId?._id === user._id || item.sender?._id === user._id;
-    const showAvatar = index === 0 || messages[index - 1].senderId !== item.senderId;
+    const senderId = item.senderId?._id || item.sender?._id || item.senderId;
+    const prevSenderId = messages[index - 1]?.senderId?._id || messages[index - 1]?.senderId || messages[index - 1]?.sender?._id;
+    const isOwnMessage = String(senderId) === String(userId);
+    const shouldShowAvatar = index === 0 || String(prevSenderId) !== String(senderId);
 
     return (
       <View style={[
         styles.messageContainer,
         isOwnMessage ? styles.ownMessageContainer : styles.otherMessageContainer
       ]}>
-        {!isOwnMessage && showAvatar && (
+        {!isOwnMessage && shouldShowAvatar && (
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {item.senderId?.name?.charAt(0) || item.sender?.name?.charAt(0) || '?'}
