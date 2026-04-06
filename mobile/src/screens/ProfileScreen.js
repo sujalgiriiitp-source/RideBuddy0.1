@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'react-native-image-picker';
@@ -611,6 +611,14 @@ const ProfileScreen = ({ route }) => {
           <AnimatedReveal delay={180}>
             <CustomButton title="Logout" onPress={logout} variant="danger" icon="log-out-outline" style={styles.logoutButton} />
           </AnimatedReveal>
+          <AnimatedReveal delay={220}>
+            <View style={styles.legalLinksWrap}>
+              <Text style={styles.legalLinkText} onPress={() => Linking.openURL('https://ride-buddy0-1.vercel.app/privacy-policy')}>Privacy Policy</Text>
+              <Text style={styles.legalLinkDivider}>•</Text>
+              <Text style={styles.legalLinkText} onPress={() => Linking.openURL('https://ride-buddy0-1.vercel.app/terms')}>Terms of Service</Text>
+            </View>
+            <Text style={styles.versionText}>App Version: 1.0.0</Text>
+          </AnimatedReveal>
         </>
       ) : (
         <>
@@ -1132,6 +1140,30 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     marginTop: 8
+  },
+  legalLinksWrap: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8
+  },
+  legalLinkText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  legalLinkDivider: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  versionText: {
+    marginTop: 8,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: '600'
   }
 });
 

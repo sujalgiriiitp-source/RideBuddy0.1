@@ -23,6 +23,8 @@ export default function RootLayout() {
               <Stack.Screen name="verify-email" />
               <Stack.Screen name="forgot-password" />
               <Stack.Screen name="reset-password" />
+              <Stack.Screen name="privacy-policy" options={{ headerShown: true, title: 'Privacy Policy' }} />
+              <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
               <Stack.Screen name="ride/[rideId]" options={{ headerShown: true, title: 'Ride Details' }} />

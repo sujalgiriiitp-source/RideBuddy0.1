@@ -25,6 +25,11 @@ const buildHref = (name, params = {}) => {
       return '/forgot-password';
     case 'Reset Password':
       return '/reset-password';
+    case 'Privacy Policy':
+      return '/privacy-policy';
+    case 'Terms':
+    case 'Terms of Service':
+      return '/terms';
     case 'Main':
     case 'Home':
       return '/(tabs)/home';

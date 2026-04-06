@@ -119,6 +119,12 @@ const LoginScreen = ({ navigation }) => {
             style={styles.secondaryCta}
             fullWidth
           />
+          <Text style={styles.legalText}>
+            By creating an account you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => navigation.navigate('Terms of Service')}>Terms of Service</Text>
+            {' '}and{' '}
+            <Text style={styles.legalLink} onPress={() => navigation.navigate('Privacy Policy')}>Privacy Policy</Text>
+          </Text>
         </PremiumCard>
       </View>
     </ScreenTransition>
@@ -160,6 +166,18 @@ const styles = StyleSheet.create({
   },
   forgotCta: {
     marginTop: tokens.spacing.sm
+  },
+  legalText: {
+    marginTop: tokens.spacing.md,
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    fontWeight: '600'
+  },
+  legalLink: {
+    color: colors.primary,
+    fontWeight: '800'
   }
 });
 

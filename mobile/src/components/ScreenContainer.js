@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { useTheme } from '../context/ThemeContext';
+import WebFooter from './WebFooter';
 
 const ScreenContainer = ({
   children,
@@ -35,6 +36,7 @@ const ScreenContainer = ({
           nestedScrollEnabled={scroll ? true : undefined}
         >
           {children}
+          <WebFooter />
         </Wrapper>
       </LinearGradient>
     </SafeAreaView>
