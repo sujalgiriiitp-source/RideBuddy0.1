@@ -14,6 +14,7 @@ const router = express.Router();
 router.use(auth);
 
 router.get('/my', validate(bookingQuerySchema, 'query'), bookingController.getMyBookings);
+router.get('/my-bookings', validate(bookingQuerySchema, 'query'), bookingController.getMyBookings);
 router.get('/ride/:rideId/mine', validate(rideBookingCheckParamsSchema, 'params'), bookingController.getMyRideBooking);
 router.post('/', validate(createBookingSchema), bookingController.createBooking);
 router.post('/:id/cancel', validate(cancelBookingParamsSchema, 'params'), bookingController.cancelBooking);
