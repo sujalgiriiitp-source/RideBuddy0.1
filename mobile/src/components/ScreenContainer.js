@@ -5,6 +5,7 @@ import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { useTheme } from '../context/ThemeContext';
 import WebFooter from './WebFooter';
+import InstallPrompt from './InstallPrompt';
 
 const ScreenContainer = ({
   children,
@@ -37,6 +38,7 @@ const ScreenContainer = ({
         >
           {children}
           <WebFooter />
+          <InstallPrompt />
         </Wrapper>
       </LinearGradient>
     </SafeAreaView>
