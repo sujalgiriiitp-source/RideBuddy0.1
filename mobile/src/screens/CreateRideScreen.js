@@ -12,6 +12,7 @@ import CustomButton from '../components/CustomButton';
 import { ProgressBar, RideCardSkeleton, SuccessAnimation } from '../components';
 import AnimatedReveal from '../components/AnimatedReveal';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import {
@@ -23,6 +24,7 @@ import {
 
 const CreateRideScreen = () => {
   const { addInAppNotification } = useNotifications();
+  const { refreshProfile } = useAuth();
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -30,6 +32,8 @@ const CreateRideScreen = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [preparing, setPreparing] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [checkingVehicle, setCheckingVehicle] = useState(true);
+  const [vehicleReady, setVehicleReady] = useState(false);
   
   const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
@@ -56,6 +60,35 @@ const CreateRideScreen = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const checkVehicleDetails = async () => {
+      try {
+        setCheckingVehicle(true);
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setVehicleReady(false);
+          return;
+        }
+
+        const profile = (await refreshProfile()) || (await apiRequest('/users/profile', { token })).data;
+        const isReady = Boolean(
+          profile?.vehicleType &&
+            profile?.vehicleBrand &&
+            profile?.vehicleModel &&
+            profile?.vehicleColor &&
+            profile?.numberPlate
+        );
+        setVehicleReady(isReady);
+      } catch (_error) {
+        setVehicleReady(false);
+      } finally {
+        setCheckingVehicle(false);
+      }
+    };
+
+    checkVehicleDetails();
+  }, [refreshProfile]);
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -139,6 +172,8 @@ const CreateRideScreen = () => {
     !getRideDateValidationError(form.dateTime) &&
     isPositiveNumber(form.price) &&
     isPositiveWholeNumber(form.seatsAvailable) &&
+    vehicleReady &&
+    !checkingVehicle &&
     !loading;
 
   const handleDateChange = (_, dateValue) => {
@@ -164,6 +199,15 @@ const CreateRideScreen = () => {
 
     if (!validateForm({ source, destination, dateTime, price, seatsAvailable })) {
       Toast.show({ type: 'error', text1: 'Please fix form errors' });
+      return;
+    }
+
+    if (!vehicleReady) {
+      Toast.show({
+        type: 'error',
+        text1: 'Vehicle details required',
+        text2: 'Please add vehicle details before creating a ride'
+      });
       return;
     }
 
@@ -280,6 +324,14 @@ const CreateRideScreen = () => {
             error={errors.seatsAvailable}
             icon="people-outline"
           />
+
+          {!vehicleReady && !checkingVehicle ? (
+            <View style={styles.warningCard}>
+              <Ionicons name="warning-outline" size={18} color="#B45309" />
+              <Text style={styles.warningText}>Please add vehicle details before creating a ride</Text>
+            </View>
+          ) : null}
+
           <CustomButton
             title="Publish Ride"
             onPress={handleCreate}
@@ -386,6 +438,24 @@ const styles = StyleSheet.create({
   },
   iosPickerActions: {
     marginBottom: 12
+  },
+  warningCard: {
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFFBEB',
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  warningText: {
+    flex: 1,
+    color: '#92400E',
+    fontSize: 13,
+    fontWeight: '700'
   }
 });
 

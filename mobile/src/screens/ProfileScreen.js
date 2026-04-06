@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
 import ScreenContainer from '../components/ScreenContainer';
 import CustomButton from '../components/CustomButton';
+import InputField from '../components/InputField';
 import AnimatedReveal from '../components/AnimatedReveal';
 import { AnimatedEmptyState, RideCardSkeleton } from '../components';
 import RatingModal from '../components/RatingModal';
@@ -25,6 +27,20 @@ const canCancelBooking = (rideDateTime) => {
   return rideTime - Date.now() >= 2 * 60 * 60 * 1000;
 };
 
+const numberPlateRegex = /^[A-Za-z]{2}[\s-]?\d{1,2}[\s-]?[A-Za-z]{1,3}[\s-]?\d{4}$/;
+
+const normalizePlate = (plate = '') => String(plate).toUpperCase().replace(/[\s-]/g, '');
+
+const hasVehicleFields = (profile) => {
+  return Boolean(
+    profile?.vehicleType &&
+      profile?.vehicleBrand &&
+      profile?.vehicleModel &&
+      profile?.vehicleColor &&
+      profile?.numberPlate
+  );
+};
+
 const ProfileScreen = ({ route }) => {
   const { user, refreshProfile, logout } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -37,6 +53,20 @@ const ProfileScreen = ({ route }) => {
   const [selectedBookingForRating, setSelectedBookingForRating] = useState(null);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratedRideIds, setRatedRideIds] = useState([]);
+  const [editVisible, setEditVisible] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editErrors, setEditErrors] = useState({});
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
+    vehicleType: 'Car',
+    vehicleBrand: '',
+    vehicleModel: '',
+    vehicleColor: '',
+    numberPlate: '',
+    profilePhoto: ''
+  });
 
   const now = Date.now();
   const upcomingBookings = bookings.filter((booking) => {
@@ -118,6 +148,20 @@ const ProfileScreen = ({ route }) => {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    setEditForm({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      vehicleType: user?.vehicleType || 'Car',
+      vehicleBrand: user?.vehicleBrand || '',
+      vehicleModel: user?.vehicleModel || '',
+      vehicleColor: user?.vehicleColor || '',
+      numberPlate: user?.numberPlate || '',
+      profilePhoto: user?.profilePhoto || ''
+    });
+    setEditErrors({});
+  }, [user]);
+
   const handleRefresh = async () => {
     try {
       setLoading(true);
@@ -154,6 +198,170 @@ const ProfileScreen = ({ route }) => {
       Toast.show({ type: 'error', text1: 'Cancel failed', text2: error.message });
     } finally {
       setCancelLoadingBookingId('');
+    }
+  };
+
+  const setEditField = (field, value) => {
+    setEditForm((previous) => ({
+      ...previous,
+      [field]: value
+    }));
+
+    if (editErrors[field]) {
+      setEditErrors((previous) => ({
+        ...previous,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const validateEditForm = () => {
+    const nextErrors = {};
+
+    if (!String(editForm.name || '').trim()) {
+      nextErrors.name = 'Full name is required';
+    }
+
+    if (!String(editForm.phone || '').trim()) {
+      nextErrors.phone = 'Phone number is required';
+    }
+
+    if (!['Car', 'Auto', 'Bike'].includes(editForm.vehicleType)) {
+      nextErrors.vehicleType = 'Please select vehicle type';
+    }
+
+    if (!String(editForm.vehicleBrand || '').trim()) {
+      nextErrors.vehicleBrand = 'Vehicle brand is required';
+    }
+
+    if (!String(editForm.vehicleModel || '').trim()) {
+      nextErrors.vehicleModel = 'Vehicle model is required';
+    }
+
+    if (!String(editForm.vehicleColor || '').trim()) {
+      nextErrors.vehicleColor = 'Vehicle color is required';
+    }
+
+    const normalizedNumberPlate = normalizePlate(editForm.numberPlate);
+    if (!normalizedNumberPlate) {
+      nextErrors.numberPlate = 'Number plate is required';
+    } else if (!numberPlateRegex.test(String(editForm.numberPlate || '').trim())) {
+      nextErrors.numberPlate = 'Use Indian format like UP32AB1234';
+    }
+
+    if (editForm.profilePhoto && !/^https?:\/\//i.test(editForm.profilePhoto) && !/^data:image\//i.test(editForm.profilePhoto)) {
+      nextErrors.profilePhoto = 'Photo must be image URL or base64 image data';
+    }
+
+    setEditErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const openEditModal = () => {
+    setEditVisible(true);
+  };
+
+  const closeEditModal = () => {
+    if (savingProfile || uploadingPhoto) {
+      return;
+    }
+    setEditVisible(false);
+  };
+
+  const handlePickPhoto = async () => {
+    if (Platform.OS === 'web') {
+      Toast.show({
+        type: 'info',
+        text1: 'Photo upload on web',
+        text2: 'Use the Profile Photo URL field for web uploads.'
+      });
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      const result = await ImagePicker.launchImageLibrary({
+        mediaType: 'photo',
+        includeBase64: true,
+        quality: 0.7,
+        maxWidth: 720,
+        maxHeight: 720
+      });
+
+      if (result?.didCancel) {
+        return;
+      }
+
+      const asset = result?.assets?.[0];
+      if (!asset) {
+        return;
+      }
+
+      const mimeType = asset.type || 'image/jpeg';
+      const nextPhoto = asset.base64
+        ? `data:${mimeType};base64,${asset.base64}`
+        : asset.uri || '';
+
+      if (!nextPhoto) {
+        throw new Error('Unable to read selected image');
+      }
+
+      setEditField('profilePhoto', nextPhoto);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Image selection failed',
+        text2: error.message
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!validateEditForm()) {
+      Toast.show({ type: 'error', text1: 'Please fix form errors' });
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login again');
+      }
+
+      await apiRequest('/users/vehicle', {
+        method: 'PUT',
+        token,
+        body: {
+          name: String(editForm.name || '').trim(),
+          phone: String(editForm.phone || '').trim(),
+          vehicleType: editForm.vehicleType,
+          vehicleBrand: String(editForm.vehicleBrand || '').trim(),
+          vehicleModel: String(editForm.vehicleModel || '').trim(),
+          vehicleColor: String(editForm.vehicleColor || '').trim(),
+          numberPlate: normalizePlate(editForm.numberPlate)
+        }
+      });
+
+      if (editForm.profilePhoto && editForm.profilePhoto !== (user?.profilePhoto || '')) {
+        await apiRequest('/users/photo', {
+          method: 'POST',
+          token,
+          body: {
+            profilePhoto: String(editForm.profilePhoto || '').trim()
+          }
+        });
+      }
+
+      await Promise.all([refreshProfile(), fetchMyRatings()]);
+      setEditVisible(false);
+      Toast.show({ type: 'success', text1: 'Profile updated successfully' });
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Update failed', text2: error.message });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -307,9 +515,13 @@ const ProfileScreen = ({ route }) => {
               </View>
 
               <View style={styles.identityRow}>
-                <View style={styles.avatarCircle}>
-                  <Ionicons name="person" size={30} color="#0A84FF" />
-                </View>
+                {user?.profilePhoto ? (
+                  <Image source={{ uri: user.profilePhoto }} style={styles.avatarPhoto} />
+                ) : (
+                  <View style={styles.avatarCircle}>
+                    <Ionicons name="person" size={30} color="#0A84FF" />
+                  </View>
+                )}
                 <View style={styles.identityTextWrap}>
                   <Text style={styles.name}>{user?.name || 'RideBuddy User'}</Text>
                   <Text style={styles.caption}>Campus Commuter</Text>
@@ -330,6 +542,21 @@ const ProfileScreen = ({ route }) => {
                   </View>
                   <Text style={styles.value}>{user?.phone || 'Not added'}</Text>
                 </View>
+              </View>
+
+              <View style={styles.vehicleCard}>
+                <Text style={styles.vehicleTitle}>Vehicle Details</Text>
+                {hasVehicleFields(user) ? (
+                  <>
+                    <Text style={styles.vehicleLine}>Type: {user?.vehicleType}</Text>
+                    <Text style={styles.vehicleLine}>
+                      Vehicle: {user?.vehicleBrand} {user?.vehicleModel} ({user?.vehicleColor})
+                    </Text>
+                    <Text style={styles.vehicleLine}>Number: {user?.numberPlate}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.vehicleWarningText}>No vehicle details added yet.</Text>
+                )}
               </View>
 
               <View style={styles.ratingCard}>
@@ -376,6 +603,9 @@ const ProfileScreen = ({ route }) => {
           </AnimatedReveal>
 
           <AnimatedReveal delay={120}>
+            <CustomButton title="Edit Profile" onPress={openEditModal} icon="create-outline" />
+          </AnimatedReveal>
+          <AnimatedReveal delay={140}>
             <CustomButton title="Refresh Profile" onPress={handleRefresh} loading={loading} variant="secondary" icon="refresh-outline" />
           </AnimatedReveal>
           <AnimatedReveal delay={180}>
@@ -430,6 +660,122 @@ const ProfileScreen = ({ route }) => {
         onSkip={closeRatingModal}
         onClose={closeRatingModal}
       />
+
+      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={closeEditModal}>
+        <Pressable style={styles.modalBackdrop} onPress={closeEditModal}>
+          <Pressable style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+
+            {editForm.profilePhoto ? (
+              <Image source={{ uri: editForm.profilePhoto }} style={styles.modalPhotoPreview} />
+            ) : null}
+
+            <CustomButton
+              title={uploadingPhoto ? 'Selecting...' : 'Upload Profile Photo'}
+              onPress={handlePickPhoto}
+              variant="secondary"
+              icon="image-outline"
+              disabled={uploadingPhoto || savingProfile}
+            />
+
+            <InputField
+              label="Profile Photo URL"
+              value={editForm.profilePhoto}
+              onChangeText={(value) => setEditField('profilePhoto', value)}
+              placeholder="https://..."
+              autoCapitalize="none"
+              icon="link-outline"
+              error={editErrors.profilePhoto}
+            />
+
+            <InputField
+              label="Full Name"
+              value={editForm.name}
+              onChangeText={(value) => setEditField('name', value)}
+              placeholder="Your full name"
+              icon="person-outline"
+              error={editErrors.name}
+            />
+
+            <InputField
+              label="Phone Number"
+              value={editForm.phone}
+              onChangeText={(value) => setEditField('phone', value)}
+              placeholder="9876543210"
+              keyboardType="phone-pad"
+              icon="call-outline"
+              error={editErrors.phone}
+            />
+
+            <Text style={styles.modalSectionLabel}>Vehicle Type</Text>
+            <View style={styles.vehicleTypeRow}>
+              {['Car', 'Auto', 'Bike'].map((vehicleType) => (
+                <CustomButton
+                  key={vehicleType}
+                  title={vehicleType}
+                  variant={editForm.vehicleType === vehicleType ? 'primary' : 'secondary'}
+                  onPress={() => setEditField('vehicleType', vehicleType)}
+                  style={styles.vehicleTypeButton}
+                />
+              ))}
+            </View>
+            {!!editErrors.vehicleType && <Text style={styles.modalErrorText}>{editErrors.vehicleType}</Text>}
+
+            <InputField
+              label="Vehicle Brand"
+              value={editForm.vehicleBrand}
+              onChangeText={(value) => setEditField('vehicleBrand', value)}
+              placeholder="Maruti"
+              icon="car-outline"
+              error={editErrors.vehicleBrand}
+            />
+
+            <InputField
+              label="Vehicle Model"
+              value={editForm.vehicleModel}
+              onChangeText={(value) => setEditField('vehicleModel', value)}
+              placeholder="Swift"
+              icon="speedometer-outline"
+              error={editErrors.vehicleModel}
+            />
+
+            <InputField
+              label="Vehicle Color"
+              value={editForm.vehicleColor}
+              onChangeText={(value) => setEditField('vehicleColor', value)}
+              placeholder="White"
+              icon="color-palette-outline"
+              error={editErrors.vehicleColor}
+            />
+
+            <InputField
+              label="Number Plate"
+              value={editForm.numberPlate}
+              onChangeText={(value) => setEditField('numberPlate', value.toUpperCase())}
+              placeholder="UP32AB1234"
+              autoCapitalize="characters"
+              icon="pricetag-outline"
+              error={editErrors.numberPlate}
+            />
+
+            <CustomButton
+              title="Save Changes"
+              onPress={handleSaveProfile}
+              loading={savingProfile}
+              icon="save-outline"
+              disabled={uploadingPhoto}
+            />
+            <CustomButton
+              title="Cancel"
+              onPress={closeEditModal}
+              variant="secondary"
+              icon="close-outline"
+              style={styles.modalCancelButton}
+              disabled={savingProfile || uploadingPhoto}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 };
@@ -502,6 +848,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12
   },
+  avatarPhoto: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    marginRight: 12,
+    backgroundColor: '#EEF4FF'
+  },
   identityTextWrap: {
     flex: 1
   },
@@ -523,6 +876,33 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radius.md,
     backgroundColor: 'rgba(255,255,255,0.86)',
     padding: 14
+  },
+  vehicleCard: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#DDE7F9',
+    borderRadius: tokens.radius.md,
+    backgroundColor: '#F8FAFF',
+    padding: 12
+  },
+  vehicleTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.mutedText,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 8
+  },
+  vehicleLine: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '600',
+    marginBottom: 4
+  },
+  vehicleWarningText: {
+    fontSize: 13,
+    color: '#B45309',
+    fontWeight: '700'
   },
   infoRow: {
     flexDirection: 'row',
@@ -699,6 +1079,59 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textTertiary,
     fontWeight: '600'
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end'
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+    maxHeight: '90%'
+  },
+  modalTitle: {
+    fontSize: 20,
+    color: colors.text,
+    fontWeight: '800',
+    marginBottom: 12
+  },
+  modalPhotoPreview: {
+    width: 82,
+    height: 82,
+    borderRadius: 18,
+    marginBottom: 12,
+    backgroundColor: '#EFF6FF'
+  },
+  modalSectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.mutedText,
+    marginBottom: 8,
+    marginTop: 2
+  },
+  vehicleTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8
+  },
+  vehicleTypeButton: {
+    flex: 1
+  },
+  modalErrorText: {
+    marginBottom: 8,
+    color: colors.danger,
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  modalCancelButton: {
+    marginTop: 8
   }
 });
 

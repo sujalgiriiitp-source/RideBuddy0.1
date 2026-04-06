@@ -20,6 +20,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const dateTime = ride.dateTime || ride.date;
   const seatsLeft = ride.seatsAvailable ?? ride.availableSeats ?? ride.seats ?? 0;
   const driverName = ride?.createdBy?.name || ride?.user?.name || 'Unknown';
+  const numberPlate = ride?.createdBy?.numberPlate || ride?.user?.numberPlate || '';
   const seatCount = Number(seatsLeft);
   const isFull = seatCount <= 0;
   const isLowSeats = seatCount > 0 && seatCount <= 1;
@@ -111,6 +112,13 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
             <Text style={styles.meta}>Driver: {driverName}</Text>
           </View>
 
+          {numberPlate ? (
+            <View style={styles.metaRow}>
+              <Ionicons name="car-outline" size={16} color={colors.mutedText} />
+              <Text style={styles.meta}>🚗 {numberPlate}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.ratingRow}>
             <Text style={styles.ratingText}>{formatRatingLabel(averageRating, totalRideCount)}</Text>
             <View
@@ -176,7 +184,9 @@ const areEqualRideCardProps = (prevProps, nextProps) => {
     prevRide.availableSeats === nextRide.availableSeats &&
     prevRide.seats === nextRide.seats &&
     prevRide?.createdBy?.name === nextRide?.createdBy?.name &&
-    prevRide?.user?.name === nextRide?.user?.name
+    prevRide?.user?.name === nextRide?.user?.name &&
+    prevRide?.createdBy?.numberPlate === nextRide?.createdBy?.numberPlate &&
+    prevRide?.user?.numberPlate === nextRide?.user?.numberPlate
   );
 };
 

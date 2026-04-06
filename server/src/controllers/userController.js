@@ -8,6 +8,32 @@ const getProfile = asyncHandler(async (req, res) => {
   return sendResponse(res, StatusCodes.OK, true, 'Profile fetched successfully', profile);
 });
 
+const getUserProfile = asyncHandler(async (req, res) => {
+  const profile = await userService.getUserProfileById(req.params.userId);
+  return sendResponse(res, StatusCodes.OK, true, 'User profile fetched successfully', profile);
+});
+
+const updateVehicle = asyncHandler(async (req, res) => {
+  const profile = await userService.updateVehicleDetails({
+    userId: req.user._id,
+    ...req.body
+  });
+
+  return sendResponse(res, StatusCodes.OK, true, 'Vehicle details updated successfully', profile);
+});
+
+const uploadPhoto = asyncHandler(async (req, res) => {
+  const result = await userService.updateProfilePhoto({
+    userId: req.user._id,
+    profilePhoto: req.body.profilePhoto
+  });
+
+  return sendResponse(res, StatusCodes.OK, true, 'Profile photo uploaded successfully', result);
+});
+
 module.exports = {
-  getProfile
+  getProfile,
+  getUserProfile,
+  updateVehicle,
+  uploadPhoto
 };

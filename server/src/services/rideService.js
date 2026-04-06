@@ -18,6 +18,20 @@ const emitRideEvent = (rideId, eventName, payload) => {
   io.to(rideRoom(rideId)).emit(eventName, payload);
 };
 
+const hasCompleteVehicleDetails = (user) => {
+  if (!user) {
+    return false;
+  }
+
+  return Boolean(
+    user.vehicleType &&
+      user.vehicleBrand &&
+      user.vehicleModel &&
+      user.vehicleColor &&
+      user.numberPlate
+  );
+};
+
 const createRide = async ({ userId, pickup, drop, source, destination, dateTime, price, seatsAvailable }) => {
   const resolvedPickup = pickup || source;
   const resolvedDrop = drop || destination;
@@ -33,6 +47,17 @@ const createRide = async ({ userId, pickup, drop, source, destination, dateTime,
 
   if (parsedRideDate.getTime() < Date.now()) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride date cannot be in the past');
+  }
+
+  const creator = await User.findById(userId).select(
+    'vehicleType vehicleBrand vehicleModel vehicleColor numberPlate'
+  );
+
+  if (!hasCompleteVehicleDetails(creator)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Please add vehicle details before creating a ride'
+    );
   }
 
   const ride = await Ride.create({
@@ -89,16 +114,16 @@ const getRides = async ({ source, destination, date }) => {
   }
 
   return Ride.find(query)
-    .populate('createdBy', 'name email phone')
+    .populate('createdBy', 'name email phone profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
     .populate('passengers', 'name email')
     .sort({ dateTime: 1 });
 };
 
 const getRideById = async (rideId) => {
   const ride = await Ride.findById(rideId)
-    .populate('createdBy', 'name email phone role')
-    .populate('user', 'name email phone role')
-    .populate('driver', 'name email phone role')
+    .populate('createdBy', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
+    .populate('user', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
+    .populate('driver', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
     .populate('passengers', 'name email');
 
   if (!ride) {
@@ -286,7 +311,7 @@ const joinRide = async ({ rideId, userId, seatsBooked }) => {
   );
 
   const hydratedRide = await Ride.findById(rideId)
-    .populate('createdBy', 'name email phone')
+    .populate('createdBy', 'name email phone profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
     .populate('passengers', 'name email');
 
   // Trigger notification for ride join

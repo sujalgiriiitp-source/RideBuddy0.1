@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -324,6 +324,9 @@ const RideDetailsScreen = ({ route }) => {
               <View>
                 <Text style={styles.driverTitle}>Driver Info</Text>
                 <Text style={styles.driverName}>{ride?.createdBy?.name || 'Unknown Driver'}</Text>
+                {ride?.createdBy?.profilePhoto ? (
+                  <Image source={{ uri: ride.createdBy.profilePhoto }} style={styles.driverPhoto} />
+                ) : null}
                 <View style={styles.driverRatingRow}>
                   <Text style={styles.driverRatingText}>
                     {formatRatingLabel(driverRatingSummary?.averageRating, driverRatingSummary?.totalRideCount)}
@@ -342,6 +345,15 @@ const RideDetailsScreen = ({ route }) => {
                   >
                     <Text style={styles.driverBadgeText}>{driverBadge.label}</Text>
                   </View>
+                </View>
+                <View style={styles.vehicleCard}>
+                  <Text style={styles.vehicleCardTitle}>Vehicle Details</Text>
+                  <Text style={styles.vehicleLine}>
+                    Vehicle: {ride?.createdBy?.vehicleBrand || 'N/A'} {ride?.createdBy?.vehicleModel || ''}
+                    {ride?.createdBy?.vehicleColor ? ` (${ride.createdBy.vehicleColor})` : ''}
+                  </Text>
+                  <Text style={styles.vehicleLine}>Number: {ride?.createdBy?.numberPlate || 'N/A'}</Text>
+                  <Text style={styles.vehicleLine}>Type: {ride?.createdBy?.vehicleType || 'N/A'}</Text>
                 </View>
               </View>
             </View>
@@ -519,6 +531,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '700'
   },
+  driverPhoto: {
+    marginTop: 8,
+    width: 72,
+    height: 72,
+    borderRadius: 14,
+    backgroundColor: '#E5EDFB'
+  },
   driverRatingRow: {
     marginTop: 6,
     flexDirection: 'row',
@@ -551,6 +570,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#334155'
+  },
+  vehicleCard: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#D7E4FF',
+    borderRadius: tokens.radius.md,
+    backgroundColor: '#F8FAFF',
+    padding: 10
+  },
+  vehicleCardTitle: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    color: colors.mutedText,
+    fontWeight: '800',
+    marginBottom: 6
+  },
+  vehicleLine: {
+    fontSize: 13,
+    color: colors.text,
+    fontWeight: '600',
+    marginBottom: 3
   },
   fixedSeatCard: {
     flexDirection: 'row',

@@ -27,6 +27,38 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true
+    },
+    vehicleType: {
+      type: String,
+      enum: ['Car', 'Auto', 'Bike'],
+      trim: true,
+      default: ''
+    },
+    vehicleBrand: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    vehicleModel: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    vehicleColor: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    numberPlate: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: ''
+    },
+    profilePhoto: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   {
