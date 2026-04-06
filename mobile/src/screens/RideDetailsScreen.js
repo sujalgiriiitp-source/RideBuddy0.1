@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { formatReadableDateTime } from '../utils/dateTime';
+import { formatRatingLabel, getRatingBadge } from '../utils/rating';
 
 const extractApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
   return (
@@ -35,6 +36,7 @@ const RideDetailsScreen = ({ route }) => {
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [myRideBooking, setMyRideBooking] = useState(null);
   const [isCheckingBooking, setIsCheckingBooking] = useState(false);
+  const [driverRatingSummary, setDriverRatingSummary] = useState({ averageRating: 0, totalRideCount: 0 });
 
   const seatsToBook = 1;
 
@@ -46,6 +48,20 @@ const RideDetailsScreen = ({ route }) => {
   const fetchRide = async () => {
     const response = await apiRequest(`/rides/${rideId}`);
     setRide(response.data);
+  };
+
+  const fetchDriverRatingSummary = async (driverId) => {
+    if (!driverId) {
+      setDriverRatingSummary({ averageRating: 0, totalRideCount: 0 });
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/ratings/user/${driverId}`);
+      setDriverRatingSummary(response?.data || { averageRating: 0, totalRideCount: 0 });
+    } catch (error) {
+      setDriverRatingSummary({ averageRating: 0, totalRideCount: 0 });
+    }
   };
 
   const fetchRideBookingStatus = async () => {
@@ -81,6 +97,13 @@ const RideDetailsScreen = ({ route }) => {
 
     load();
   }, [rideId]);
+
+  useEffect(() => {
+    const driverId = ride?.createdBy?._id || ride?.createdBy?.id || ride?.createdBy;
+    fetchDriverRatingSummary(driverId);
+  }, [ride?.createdBy]);
+
+  const driverBadge = getRatingBadge(driverRatingSummary?.averageRating, driverRatingSummary?.totalRideCount);
 
   const joinRide = async (availableSeats) => {
     try {
@@ -301,6 +324,25 @@ const RideDetailsScreen = ({ route }) => {
               <View>
                 <Text style={styles.driverTitle}>Driver Info</Text>
                 <Text style={styles.driverName}>{ride?.createdBy?.name || 'Unknown Driver'}</Text>
+                <View style={styles.driverRatingRow}>
+                  <Text style={styles.driverRatingText}>
+                    {formatRatingLabel(driverRatingSummary?.averageRating, driverRatingSummary?.totalRideCount)}
+                  </Text>
+                  <View
+                    style={[
+                      styles.driverBadge,
+                      driverBadge.tone === 'success'
+                        ? styles.driverBadgeSuccess
+                        : driverBadge.tone === 'warning'
+                          ? styles.driverBadgeWarning
+                          : driverBadge.tone === 'neutral'
+                            ? styles.driverBadgeNeutral
+                            : styles.driverBadgePrimary
+                    ]}
+                  >
+                    <Text style={styles.driverBadgeText}>{driverBadge.label}</Text>
+                  </View>
+                </View>
               </View>
             </View>
           </View>
@@ -476,6 +518,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontWeight: '700'
+  },
+  driverRatingRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  driverRatingText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '700'
+  },
+  driverBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3
+  },
+  driverBadgePrimary: {
+    backgroundColor: '#DBEAFE'
+  },
+  driverBadgeSuccess: {
+    backgroundColor: '#DCFCE7'
+  },
+  driverBadgeWarning: {
+    backgroundColor: '#FEF3C7'
+  },
+  driverBadgeNeutral: {
+    backgroundColor: '#E5E7EB'
+  },
+  driverBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#334155'
   },
   fixedSeatCard: {
     flexDirection: 'row',

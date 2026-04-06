@@ -26,7 +26,48 @@ const HomeScreen = ({ navigation }) => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('time');
+  const [driverRatings, setDriverRatings] = useState({});
   const fabScale = React.useRef(new Animated.Value(1)).current;
+
+  const fetchDriverRatings = useCallback(async (rideList = []) => {
+    const uniqueDriverIds = Array.from(
+      new Set(
+        rideList
+          .map((ride) => ride?.createdBy?._id || ride?.createdBy?.id || ride?.createdBy)
+          .filter(Boolean)
+          .map((id) => String(id))
+      )
+    );
+
+    if (uniqueDriverIds.length === 0) {
+      setDriverRatings({});
+      return;
+    }
+
+    const results = await Promise.all(
+      uniqueDriverIds.map(async (driverId) => {
+        try {
+          const response = await apiRequest(`/ratings/user/${driverId}`);
+          return {
+            driverId,
+            summary: response?.data || { averageRating: 0, totalRideCount: 0 }
+          };
+        } catch (error) {
+          return {
+            driverId,
+            summary: { averageRating: 0, totalRideCount: 0 }
+          };
+        }
+      })
+    );
+
+    const nextMap = {};
+    results.forEach((item) => {
+      nextMap[item.driverId] = item.summary;
+    });
+
+    setDriverRatings(nextMap);
+  }, []);
 
   const normalizeDateString = (value) => {
     if (!value) {
@@ -95,8 +136,12 @@ const HomeScreen = ({ navigation }) => {
       console.log('[HomeScreen] Fetching rides...');
     }
     const response = await apiRequest('/rides');
-    setRides(response.data || []);
-  }, []);
+    const nextRides = response.data || [];
+    setRides(nextRides);
+    fetchDriverRatings(nextRides).catch(() => {
+      setDriverRatings({});
+    });
+  }, [fetchDriverRatings]);
 
   useEffect(() => {
     const load = async () => {
@@ -308,10 +353,11 @@ const HomeScreen = ({ navigation }) => {
       <RideCard
         ride={item}
         index={index}
+        ratingSummary={driverRatings[String(item?.createdBy?._id || item?.createdBy?.id || item?.createdBy || '')]}
         onPress={() => goToRideDetails(item._id)}
       />
     </StaggeredItem>
-  ), [goToRideDetails]);
+  ), [goToRideDetails, driverRatings]);
 
   const renderEmpty = useCallback(() => (
     <AnimatedEmptyState

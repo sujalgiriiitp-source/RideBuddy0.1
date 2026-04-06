@@ -8,8 +8,9 @@ import AnimatedReveal from './AnimatedReveal';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { formatReadableDateTime } from '../utils/dateTime';
+import { formatRatingLabel, getRatingBadge } from '../utils/rating';
 
-const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false }) => {
+const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false, ratingSummary }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const cardOpacity = useRef(new Animated.Value(1)).current;
   const shadowAnim = useRef(new Animated.Value(0)).current;
@@ -23,6 +24,9 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const isFull = seatCount <= 0;
   const isLowSeats = seatCount > 0 && seatCount <= 1;
   const statusLabel = isFull ? 'Full' : 'Available';
+  const averageRating = Number(ratingSummary?.averageRating || 0);
+  const totalRideCount = Number(ratingSummary?.totalRideCount || 0);
+  const ratingBadge = getRatingBadge(averageRating, totalRideCount);
 
   const animateTo = (toValue, isPress = false) => {
     if (isPress && Platform.OS !== 'web' && Haptics?.impactAsync) {
@@ -106,6 +110,37 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
             <Ionicons name="person-outline" size={16} color={colors.mutedText} />
             <Text style={styles.meta}>Driver: {driverName}</Text>
           </View>
+
+          <View style={styles.ratingRow}>
+            <Text style={styles.ratingText}>{formatRatingLabel(averageRating, totalRideCount)}</Text>
+            <View
+              style={[
+                styles.ratingBadge,
+                ratingBadge.tone === 'success'
+                  ? styles.ratingBadgeSuccess
+                  : ratingBadge.tone === 'warning'
+                    ? styles.ratingBadgeWarning
+                    : ratingBadge.tone === 'neutral'
+                      ? styles.ratingBadgeNeutral
+                      : styles.ratingBadgePrimary
+              ]}
+            >
+              <Text
+                style={[
+                  styles.ratingBadgeText,
+                  ratingBadge.tone === 'success'
+                    ? styles.ratingBadgeTextSuccess
+                    : ratingBadge.tone === 'warning'
+                      ? styles.ratingBadgeTextWarning
+                      : ratingBadge.tone === 'neutral'
+                        ? styles.ratingBadgeTextNeutral
+                        : styles.ratingBadgeTextPrimary
+                ]}
+              >
+                {ratingBadge.label}
+              </Text>
+            </View>
+          </View>
         </Pressable>
 
         {onPress ? <CustomButton title={actionLabel} onPress={onPress} variant="secondary" style={styles.cta} icon="arrow-forward" /> : null}
@@ -122,7 +157,9 @@ const areEqualRideCardProps = (prevProps, nextProps) => {
     prevProps.actionLabel !== nextProps.actionLabel ||
     prevProps.index !== nextProps.index ||
     prevProps.highlight !== nextProps.highlight ||
-    Boolean(prevProps.onPress) !== Boolean(nextProps.onPress);
+    Boolean(prevProps.onPress) !== Boolean(nextProps.onPress) ||
+    Number(prevProps?.ratingSummary?.averageRating || 0) !== Number(nextProps?.ratingSummary?.averageRating || 0) ||
+    Number(prevProps?.ratingSummary?.totalRideCount || 0) !== Number(nextProps?.ratingSummary?.totalRideCount || 0);
 
   if (didBasePropsChange) {
     return false;
@@ -264,6 +301,52 @@ const styles = StyleSheet.create({
   },
   cta: {
     marginTop: 8
+  },
+  ratingRow: {
+    marginBottom: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10
+  },
+  ratingText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  ratingBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 4
+  },
+  ratingBadgePrimary: {
+    backgroundColor: '#DBEAFE'
+  },
+  ratingBadgeSuccess: {
+    backgroundColor: '#DCFCE7'
+  },
+  ratingBadgeWarning: {
+    backgroundColor: '#FEF3C7'
+  },
+  ratingBadgeNeutral: {
+    backgroundColor: '#E5E7EB'
+  },
+  ratingBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3
+  },
+  ratingBadgeTextPrimary: {
+    color: '#1D4ED8'
+  },
+  ratingBadgeTextSuccess: {
+    color: '#166534'
+  },
+  ratingBadgeTextWarning: {
+    color: '#92400E'
+  },
+  ratingBadgeTextNeutral: {
+    color: '#374151'
   }
 });
 
