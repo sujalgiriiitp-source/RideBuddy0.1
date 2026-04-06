@@ -145,7 +145,9 @@ export const AuthProvider = ({ children }) => {
       token: activeToken
     });
     const nextUser = response.data;
-    setUser(nextUser);
+    if (JSON.stringify(nextUser) !== JSON.stringify(user)) {
+      setUser(nextUser);
+    }
     await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
     return nextUser;
   };

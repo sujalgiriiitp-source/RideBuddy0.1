@@ -16,9 +16,9 @@ import { useAuth } from '../context/AuthContext';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import {
+  MIN_RIDE_YEAR,
   formatReadableDateTime,
   getMinimumRideDate,
-  getRideDateValidationError,
   parseDateValue
 } from '../utils/dateTime';
 
@@ -51,6 +51,26 @@ const CreateRideScreen = () => {
   const isPositiveWholeNumber = (value) => {
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed > 0;
+  };
+
+  const getDateStartTimestamp = (value) => {
+    const date = parseDateValue(value);
+    if (!date) {
+      return null;
+    }
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  };
+
+  const isValidRideDateInput = (value) => {
+    const date = parseDateValue(value);
+    if (!date || date.getFullYear() < MIN_RIDE_YEAR) {
+      return false;
+    }
+
+    const inputDateStart = getDateStartTimestamp(date);
+    const todayDateStart = getDateStartTimestamp(new Date());
+    return inputDateStart !== null && todayDateStart !== null && inputDateStart >= todayDateStart;
   };
 
   useEffect(() => {
@@ -88,7 +108,7 @@ const CreateRideScreen = () => {
     };
 
     checkVehicleDetails();
-  }, [refreshProfile]);
+  }, []);
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -105,11 +125,7 @@ const CreateRideScreen = () => {
     }
 
     if (field === 'dateTime') {
-      if (!trimmedValue) {
-        nextFieldError = 'Please select date & time';
-      } else {
-        nextFieldError = getRideDateValidationError(trimmedValue) || undefined;
-      }
+      nextFieldError = isValidRideDateInput(trimmedValue) ? undefined : 'Please select a valid future date';
     }
 
     if (field === 'price') {
@@ -144,13 +160,8 @@ const CreateRideScreen = () => {
       nextErrors.destination = 'Destination is required';
     }
 
-    if (!dateTime) {
-      nextErrors.dateTime = 'Please select date & time';
-    } else {
-      const dateError = getRideDateValidationError(dateTime);
-      if (dateError) {
-        nextErrors.dateTime = dateError;
-      }
+    if (!isValidRideDateInput(dateTime)) {
+      nextErrors.dateTime = 'Please select a valid future date';
     }
 
     if (!Number.isFinite(price) || price <= 0) {
@@ -168,8 +179,7 @@ const CreateRideScreen = () => {
   const isFormValid =
     form.source.trim().length > 0 &&
     form.destination.trim().length > 0 &&
-    form.dateTime.trim().length > 0 &&
-    !getRideDateValidationError(form.dateTime) &&
+    isValidRideDateInput(form.dateTime.trim()) &&
     isPositiveNumber(form.price) &&
     isPositiveWholeNumber(form.seatsAvailable) &&
     vehicleReady &&

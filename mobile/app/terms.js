@@ -1,6 +1,6 @@
 import React from 'react';
-import TermsScreen from '../src/screens/TermsScreen';
+import { Redirect } from 'expo-router';
 
-export default function TermsRoute() {
-  return <TermsScreen />;
+export default function TermsRedirectRoute() {
+  return <Redirect href="/legal" />;
 }

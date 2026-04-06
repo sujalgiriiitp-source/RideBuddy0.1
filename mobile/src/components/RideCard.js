@@ -7,7 +7,7 @@ import CustomButton from './CustomButton';
 import AnimatedReveal from './AnimatedReveal';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
-import { formatReadableDateTime } from '../utils/dateTime';
+import { formatReadableDateTime, MIN_RIDE_YEAR, parseDateValue } from '../utils/dateTime';
 import { formatRatingLabel, getRatingBadge } from '../utils/rating';
 
 const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false, ratingSummary }) => {
@@ -18,6 +18,10 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const source = ride.source || ride.from || 'Unknown source';
   const destination = ride.destination || ride.to || 'Unknown destination';
   const dateTime = ride.dateTime || ride.date;
+  const parsedRideDate = parseDateValue(dateTime);
+  const displayDateTime = parsedRideDate && parsedRideDate.getFullYear() >= MIN_RIDE_YEAR
+    ? formatReadableDateTime(dateTime)
+    : 'Date not set';
   const seatsLeft = ride.seatsAvailable ?? ride.availableSeats ?? ride.seats ?? 0;
   const driverName = ride?.createdBy?.name || ride?.user?.name || 'Unknown';
   const numberPlate = ride?.createdBy?.numberPlate || ride?.user?.numberPlate || '';
@@ -91,7 +95,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
 
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={16} color={colors.mutedText} />
-            <Text style={styles.meta}>{formatReadableDateTime(dateTime)}</Text>
+            <Text style={styles.meta}>{displayDateTime}</Text>
           </View>
 
           <View style={styles.bottomRow}>

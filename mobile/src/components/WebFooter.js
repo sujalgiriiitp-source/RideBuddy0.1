@@ -12,13 +12,13 @@ const WebFooter = () => {
   return (
     <View style={styles.footer}>
       <View style={styles.linksRow}>
-        <Link href="/privacy-policy" asChild>
+        <Link href="/legal" asChild>
           <Pressable>
             <Text style={styles.linkText}>Privacy Policy</Text>
           </Pressable>
         </Link>
         <Text style={styles.dot}>•</Text>
-        <Link href="/terms" asChild>
+        <Link href="/legal" asChild>
           <Pressable>
             <Text style={styles.linkText}>Terms of Service</Text>
           </Pressable>

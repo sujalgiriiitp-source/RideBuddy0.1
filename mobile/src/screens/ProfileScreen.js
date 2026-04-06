@@ -613,9 +613,7 @@ const ProfileScreen = ({ route }) => {
           </AnimatedReveal>
           <AnimatedReveal delay={220}>
             <View style={styles.legalLinksWrap}>
-              <Text style={styles.legalLinkText} onPress={() => Linking.openURL('https://ride-buddy0-1.vercel.app/privacy-policy')}>Privacy Policy</Text>
-              <Text style={styles.legalLinkDivider}>•</Text>
-              <Text style={styles.legalLinkText} onPress={() => Linking.openURL('https://ride-buddy0-1.vercel.app/terms')}>Terms of Service</Text>
+              <Text style={styles.legalLinkText} onPress={() => Linking.openURL('https://ride-buddy0-1.vercel.app/legal')}>Legal</Text>
             </View>
             <Text style={styles.versionText}>App Version: 1.0.0</Text>
           </AnimatedReveal>

@@ -141,9 +141,9 @@ const SignupScreen = ({ navigation }) => {
           />
           <Text style={styles.legalText}>
             By creating an account you agree to our{' '}
-            <Text style={styles.legalLink} onPress={() => navigation.navigate('Terms of Service')}>Terms of Service</Text>
+            <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Terms of Service</Text>
             {' '}and{' '}
-            <Text style={styles.legalLink} onPress={() => navigation.navigate('Privacy Policy')}>Privacy Policy</Text>
+            <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Privacy Policy</Text>
           </Text>
         </PremiumCard>
       </View>
