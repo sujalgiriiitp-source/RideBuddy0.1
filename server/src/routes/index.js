@@ -8,6 +8,7 @@ const mapboxRoutes = require('./mapboxRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const chatRoutes = require('./chatRoutes');
 const conversationRoutes = require('./conversationRoutes');
+const bookingRoutes = require('./bookingRoutes');
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/mapbox', mapboxRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/chat', chatRoutes);
 router.use('/conversations', conversationRoutes);
+router.use('/bookings', bookingRoutes);
 
 module.exports = router;

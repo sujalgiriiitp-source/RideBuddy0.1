@@ -34,8 +34,16 @@ const buildHref = (name, params = {}) => {
       return '/(tabs)/chat';
     case 'Intent':
       return '/(tabs)/intent';
-    case 'Profile':
-      return '/(tabs)/profile';
+    case 'Profile': {
+      const tab = normalizeParam(params?.tab);
+      if (!tab) {
+        return '/(tabs)/profile';
+      }
+      return {
+        pathname: '/(tabs)/profile',
+        params: { tab: String(tab) }
+      };
+    }
     case 'Notifications':
       return '/notifications';
     case 'Ride Details': {
