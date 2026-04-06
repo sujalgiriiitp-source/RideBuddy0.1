@@ -8,8 +8,7 @@ const mapboxRoutes = require('./mapboxRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const chatRoutes = require('./chatRoutes');
 const conversationRoutes = require('./conversationRoutes');
-const bookingRoutes = require('./bookingRoutes');
-const bookingsRoutes = require('./bookings');
+const bookingRoutes = require('./bookings');
 const messageRoutes = require('./messageRoutes');
 const ratingRoutes = require('./ratingRoutes');
 
@@ -26,7 +25,7 @@ router.use('/chat', chatRoutes);
 router.use('/conversations', conversationRoutes);
 router.use('/messages', messageRoutes);
 router.use('/bookings', bookingRoutes);
-router.use('/booking', bookingsRoutes);
+router.use('/booking', bookingRoutes);
 router.use('/ratings', ratingRoutes);
 
 module.exports = router;
