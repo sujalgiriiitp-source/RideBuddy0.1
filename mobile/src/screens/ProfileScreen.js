@@ -501,6 +501,12 @@ const ProfileScreen = ({ route }) => {
   }
 
   const ratingBadge = getRatingBadge(ratingSummary.averageRating, ratingSummary.totalReviews);
+  const initials = String(user?.name || 'RideBuddy User')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('');
 
   return (
     <ScreenContainer contentContainerStyle={styles.screenContent}>
@@ -538,7 +544,7 @@ const ProfileScreen = ({ route }) => {
                   <Image source={{ uri: user.profilePhoto }} style={styles.avatarPhoto} />
                 ) : (
                   <View style={styles.avatarCircle}>
-                    <Text style={styles.avatarInitials}>{getInitials(user?.name)}</Text>
+                    <Text style={styles.avatarInitials}>{initials || 'RB'}</Text>
                   </View>
                 )}
                 <View style={styles.identityTextWrap}>
@@ -561,6 +567,12 @@ const ProfileScreen = ({ route }) => {
                   </View>
                   <Text style={styles.value}>{user?.phone || 'Not added'}</Text>
                 </View>
+              </View>
+
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}><Text style={styles.statValue}>{bookings.length}</Text><Text style={styles.statLabel}>Total Rides</Text></View>
+                <View style={styles.statCard}><Text style={styles.statValue}>{Number(ratingSummary.averageRating || 0).toFixed(1)} ⭐</Text><Text style={styles.statLabel}>Rating</Text></View>
+                <View style={styles.statCard}><Text style={styles.statValue}>{ratingSummary.totalReviews || 0}</Text><Text style={styles.statLabel}>Reviews</Text></View>
               </View>
 
               <View style={styles.vehicleCard}>
@@ -600,6 +612,12 @@ const ProfileScreen = ({ route }) => {
                   </View>
                 </View>
                 <Text style={styles.ratingMetaText}>{ratingSummary.totalReviews || 0} reviews received</Text>
+              </View>
+
+              <View style={styles.planCard}>
+                <Text style={styles.planTitle}>Free Plan</Text>
+                <Text style={styles.planMeta}>{upcomingBookings.length}/{5} rides used today</Text>
+                <CustomButton title="Upgrade" variant="secondary" icon="flash-outline" onPress={() => {}} style={styles.planUpgradeBtn} />
               </View>
 
               <TouchableOpacity 
@@ -659,9 +677,6 @@ const ProfileScreen = ({ route }) => {
             <CustomButton title="✏️ Edit Profile" onPress={openEditModal} icon="create-outline" style={styles.editProfileButton} />
           </AnimatedReveal>
           <AnimatedReveal delay={140}>
-            <CustomButton title="Refresh Profile" onPress={handleRefresh} loading={loading} variant="secondary" icon="refresh-outline" />
-          </AnimatedReveal>
-          <AnimatedReveal delay={180}>
             <CustomButton title="Logout" onPress={logout} variant="danger" icon="log-out-outline" style={styles.logoutButton} />
           </AnimatedReveal>
           <AnimatedReveal delay={220}>
@@ -969,6 +984,31 @@ const styles = StyleSheet.create({
     color: '#B45309',
     fontWeight: '700'
   },
+  statsRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    gap: 8
+  },
+  statCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDE7F9',
+    backgroundColor: '#FFFFFF',
+    borderRadius: tokens.radius.md,
+    paddingVertical: 10,
+    alignItems: 'center'
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.text
+  },
+  statLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6b7280'
+  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1121,6 +1161,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     fontWeight: '600'
+  },
+  planCard: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: tokens.radius.md,
+    backgroundColor: '#F8FAFC',
+    padding: 12
+  },
+  planTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.text
+  },
+  planMeta: {
+    marginTop: 4,
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  planUpgradeBtn: {
+    marginTop: 8,
+    maxWidth: 120
   },
   reviewsHeading: {
     marginTop: 14,

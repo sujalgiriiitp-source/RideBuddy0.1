@@ -35,7 +35,7 @@ const radius = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
+  xl: 16,
   xxl: 24,
   '2xl': 24,
   pill: 999,
@@ -67,12 +67,12 @@ const shadows = {
   none: { shadowColor: 'transparent', shadowOpacity: 0, elevation: 0, shadowRadius: 0 },
   xs: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
   sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 4 },
-  soft: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 6 },
+  soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   md: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
   lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 12 },
   xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 16 },
   '2xl': { shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.25, shadowRadius: 32, elevation: 20 },
-  strong: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 7 }
+  strong: { shadowColor: '#1a56db', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 7 }
 };
 
 // Material Design Elevation System (dp values)
@@ -89,18 +89,18 @@ const elevation = {
 };
 
 const gradients = {
-  primary: ['#2563EB', '#1E40AF'],
+  primary: ['#1a56db', '#1e40af'],
   secondary: ['#7C3AED', '#5B21B6'],
   accent: ['#06B6D4', '#0891B2'],
-  success: ['#22c55e', '#16a34a'],
-  danger: ['#DC2626', '#991B1B'],
+  success: ['#10b981', '#059669'],
+  danger: ['#ef4444', '#dc2626'],
   warm: ['#F59E0B', '#D97706'],
   cool: ['#06B6D4', '#0EA5E9'],
   purple: ['#A855F7', '#7C3AED'],
   pink: ['#EC4899', '#DB2777'],
   vibrant: ['#6366F1', '#EC4899'],
   softSurface: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.75)'],
-  fab: ['#2563EB', '#4F46E5'],
+  fab: ['#1a56db', '#1e40af'],
   glassLight: ['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.08)'],
   glassDark: ['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.15)'],
   

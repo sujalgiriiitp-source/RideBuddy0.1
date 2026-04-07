@@ -7,8 +7,8 @@ const colors = {
   // ============================================
   // BACKGROUNDS (Light mode)
   // ============================================
-  background: '#EEF2FF',
-  backgroundAlt: '#F8FAFF',
+  background: '#f8fafc',
+  backgroundAlt: '#f1f5f9',
   backgroundTertiary: '#F0F4F8',
   
   // ============================================
@@ -23,10 +23,10 @@ const colors = {
   // ============================================
   // PRIMARY COLORS
   // ============================================
-  primary: '#2563EB',
-  primaryLight: '#3B82F6',
-  primaryDark: '#1E40AF',
-  primaryVibrant: '#2563EB',
+  primary: '#1a56db',
+  primaryLight: '#2563eb',
+  primaryDark: '#1e40af',
+  primaryVibrant: '#1a56db',
   
   // ============================================
   // SECONDARY COLORS
@@ -45,14 +45,14 @@ const colors = {
   // ============================================
   // STATE COLORS
   // ============================================
-  success: '#22c55e',
+  success: '#10b981',
   successLight: '#86EFAC',
   successDark: '#15803D',
-  warning: '#F59E0B',
+  warning: '#f59e0b',
   warningLight: '#FCD34D',
   warningDark: '#D97706',
-  error: '#FF3B30',
-  danger: '#DC2626',
+  error: '#ef4444',
+  danger: '#ef4444',
   dangerLight: '#FCA5A5',
   dangerDark: '#991B1B',
   info: '#06B6D4',
@@ -63,9 +63,9 @@ const colors = {
   // TEXT COLORS
   // ============================================
   text: '#0F172A',
-  textSecondary: '#475569',
-  textTertiary: '#64748B',
-  mutedText: '#64748B',
+  textSecondary: '#6b7280',
+  textTertiary: '#6b7280',
+  mutedText: '#6b7280',
   lightText: '#94A3B8',
   textInverse: '#FFFFFF',
   
@@ -93,7 +93,7 @@ const colors = {
     backgroundAlt: '#1E293B',
     surface: 'rgba(30,41,59,0.9)',
     surfaceGlass: 'rgba(30,41,59,0.7)',
-    card: 'rgba(30,41,59,0.8)',
+    card: 'rgba(30,41,59,0.86)',
     text: '#F1F5F9',
     textSecondary: '#CBD5E1',
     textTertiary: '#94A3B8',
@@ -118,8 +118,8 @@ const colors = {
   gray700: '#374151',
   gray800: '#1F2937',
   gray900: '#111827',
-  backgroundMain: '#EEF2FF',
-  backgroundSecondary: '#F8FAFF',
+  backgroundMain: '#f8fafc',
+  backgroundSecondary: '#f1f5f9',
   textPrimary: '#0F172A',
 
   // ============================================

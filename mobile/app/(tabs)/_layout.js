@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/context/ThemeContext';
@@ -36,29 +36,35 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textTertiary,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-          marginBottom: 4
-        },
+        tabBarShowLabel: false,
         tabBarStyle: {
-          height: 66,
-          paddingTop: 8,
+          height: 70,
+          paddingTop: 9,
+          paddingBottom: 10,
           borderTopWidth: 1,
-          borderTopColor: theme.border,
-          backgroundColor: theme.card
+          borderTopColor: '#E5E7EB',
+          backgroundColor: '#FFFFFF'
         },
         tabBarIcon: ({ color, focused }) => (
           <View style={{ position: 'relative' }}>
             <View
               style={{
+                flexDirection: 'row',
+                alignItems: 'center',
                 transform: [{ scale: focused ? 1.08 : 1 }],
                 borderRadius: 999,
-                padding: 3
+                paddingHorizontal: focused ? 10 : 3,
+                paddingVertical: 6,
+                backgroundColor: focused ? '#DBEAFE' : 'transparent',
+                gap: 6
               }}
             >
               <Ionicons name={getTabIconName(route.name, focused)} size={22} color={color} />
+              {focused ? (
+                <Text style={{ color: '#1a56db', fontSize: 11, fontWeight: '800', textTransform: 'capitalize' }}>
+                  {route.name}
+                </Text>
+              ) : null}
             </View>
             {route.name === 'chat' && unreadCount > 0 && (
               <View style={{ position: 'absolute', top: -4, right: -4 }}>
@@ -66,7 +72,8 @@ export default function TabsLayout() {
               </View>
             )}
           </View>
-        )
+        ),
+        tabBarLabel: ({ focused }) => (focused ? null : null)
       })}
     >
       <Tabs.Screen name="home" options={{ title: 'Home' }} />

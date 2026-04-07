@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
@@ -12,6 +12,8 @@ import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
 const LoginScreen = ({ navigation }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 960;
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,18 +65,36 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <ScreenTransition variant="fadeSlide">
-      <View style={styles.container}>
-        <View style={styles.brandRow}>
-          <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
-            <Ionicons name="car-sport" size={20} color={colors.white} />
+      <View style={[styles.container, isDesktop && styles.desktopContainer]}>
+        {isDesktop ? (
+          <LinearGradient colors={['#0F1F4B', '#1a56db']} style={styles.leftPanel}>
+            <View style={styles.leftBrandRow}>
+              <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+                <Ionicons name="car-sport" size={20} color={colors.white} />
+              </LinearGradient>
+              <Text style={styles.leftTitle}>RideBuddy</Text>
+            </View>
+            <Text style={styles.leftHeadline}>Share rides, save money</Text>
+            <Text style={styles.leftSubheadline}>Professional campus commuting, made simple.</Text>
+            <View style={styles.illustrationWrap}>
+              <Ionicons name="people-circle" size={86} color="rgba(255,255,255,0.9)" />
+              <Ionicons name="car-sport" size={54} color="rgba(255,255,255,0.85)" />
+            </View>
           </LinearGradient>
-          <View>
-            <Text style={styles.title}>RideBuddy</Text>
-            <Text style={styles.subtitle}>Share rides, save money</Text>
-          </View>
-        </View>
+        ) : null}
 
-        <PremiumCard glass elevation="md">
+        <View style={[styles.formPanel, !isDesktop && styles.mobilePanel]}>
+          <View style={styles.brandRow}>
+            <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+              <Ionicons name="car-sport" size={20} color={colors.white} />
+            </LinearGradient>
+            <View>
+              <Text style={styles.title}>RideBuddy</Text>
+              <Text style={styles.subtitle}>Share rides, save money</Text>
+            </View>
+          </View>
+
+          <PremiumCard glass elevation="md" style={styles.formCard}>
           <PremiumInput
             label="Email"
             value={email}
@@ -112,14 +132,19 @@ const LoginScreen = ({ navigation }) => {
             disabled={loading || !email.trim() || !password}
             fullWidth
           />
-          <PremiumButton
-            title="Forgot Password?"
-            onPress={() => navigation.navigate('Forgot Password')}
-            variant="secondary"
-            icon="help-circle-outline"
-            fullWidth
-            style={styles.forgotCta}
-          />
+
+          <Pressable onPress={() => navigation.navigate('Forgot Password')} style={styles.forgotLinkWrap}>
+            <Text style={styles.forgotLinkText}>Forgot Password?</Text>
+          </Pressable>
+
+          <View style={styles.socialWrap}>
+            <Text style={styles.socialLabel}>or continue with</Text>
+            <View style={styles.socialRow}>
+              <Pressable style={styles.socialButton}><Ionicons name="logo-google" size={16} color={colors.text} /><Text style={styles.socialText}>Google</Text></Pressable>
+              <Pressable style={styles.socialButton}><Ionicons name="logo-apple" size={16} color={colors.text} /><Text style={styles.socialText}>Apple</Text></Pressable>
+            </View>
+          </View>
+
           <PremiumButton
             title="Create Account"
             onPress={() => navigation.navigate('Signup')}
@@ -129,12 +154,13 @@ const LoginScreen = ({ navigation }) => {
             fullWidth
           />
           <Text style={styles.legalText}>
-            By creating an account you agree to our{' '}
+            By signing up you agree to our{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Terms of Service</Text>
             {' '}and{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Privacy Policy</Text>
           </Text>
-        </PremiumCard>
+          </PremiumCard>
+        </View>
       </View>
     </ScreenTransition>
   );
@@ -143,8 +169,57 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center'
+  },
+  desktopContainer: {
+    flexDirection: 'row',
+    gap: 0
+  },
+  leftPanel: {
+    flex: 1,
+    padding: 42,
+    justifyContent: 'center'
+  },
+  formPanel: {
+    flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: tokens.spacing['2xl']
+  },
+  mobilePanel: {
     paddingVertical: tokens.spacing['2xl']
+  },
+  formCard: {
+    borderRadius: 16
+  },
+  leftBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 18
+  },
+  leftTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '800'
+  },
+  leftHeadline: {
+    color: '#FFFFFF',
+    fontSize: 34,
+    fontWeight: '900',
+    marginBottom: 10,
+    maxWidth: 420
+  },
+  leftSubheadline: {
+    color: 'rgba(255,255,255,0.86)',
+    fontSize: 16,
+    lineHeight: 24,
+    maxWidth: 420
+  },
+  illustrationWrap: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14
   },
   brandRow: {
     flexDirection: 'row',
@@ -173,8 +248,44 @@ const styles = StyleSheet.create({
   secondaryCta: {
     marginTop: tokens.spacing.md
   },
-  forgotCta: {
-    marginTop: tokens.spacing.sm
+  forgotLinkWrap: {
+    marginTop: 8,
+    alignSelf: 'flex-end'
+  },
+  forgotLinkText: {
+    color: '#1a56db',
+    fontSize: 13,
+    fontWeight: '700'
+  },
+  socialWrap: {
+    marginTop: 10
+  },
+  socialLabel: {
+    textAlign: 'center',
+    color: colors.textTertiary,
+    fontSize: 12,
+    marginBottom: 8
+  },
+  socialRow: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  socialButton: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF'
+  },
+  socialText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700'
   },
   legalText: {
     marginTop: tokens.spacing.md,

@@ -29,6 +29,9 @@ const HomeScreen = ({ navigation }) => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('time');
+  const [onlyToday, setOnlyToday] = useState(false);
+  const [under50, setUnder50] = useState(false);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [driverRatings, setDriverRatings] = useState({});
   const fabScale = React.useRef(new Animated.Value(1)).current;
 
@@ -102,6 +105,8 @@ const HomeScreen = ({ navigation }) => {
       const isFutureRide = isValidRideDate && parsedRideDate.getFullYear() >= MIN_RIDE_YEAR && parsedRideDate.getTime() >= Date.now();
       const rideDate = normalizeDateString(ride?.dateTime || ride?.date);
       const ridePrice = Number(ride?.price ?? 0);
+      const seatsAvailable = Number(ride?.seatsAvailable ?? ride?.availableSeats ?? ride?.seats ?? 0);
+      const isToday = rideDate === normalizeDateString(new Date());
 
       const matchesQuery =
         !normalizedQuery || source.includes(normalizedQuery) || destination.includes(normalizedQuery);
@@ -114,7 +119,11 @@ const HomeScreen = ({ navigation }) => {
       const matchesMaxPrice =
         parsedMaxPrice === null || (Number.isFinite(parsedMaxPrice) && ridePrice <= parsedMaxPrice);
 
-      return isFutureRide && matchesQuery && matchesDate && matchesMinPrice && matchesMaxPrice;
+      const matchesTodayChip = !onlyToday || isToday;
+      const matchesUnder50Chip = !under50 || ridePrice <= 50;
+      const matchesAvailableChip = !onlyAvailable || seatsAvailable > 0;
+
+      return isFutureRide && matchesQuery && matchesDate && matchesMinPrice && matchesMaxPrice && matchesTodayChip && matchesUnder50Chip && matchesAvailableChip;
     });
 
     const sortedRides = [...nextRides];
@@ -135,7 +144,12 @@ const HomeScreen = ({ navigation }) => {
     });
 
     return sortedRides;
-  }, [rides, searchQuery, filterDate, minPrice, maxPrice, sortBy]);
+  }, [rides, searchQuery, filterDate, minPrice, maxPrice, sortBy, onlyToday, under50, onlyAvailable]);
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Good Morning, Sujal 👋' : 'Good Evening, Sujal 👋';
+  }, []);
+
 
   const handleFilterDateChange = useCallback((_, selectedDate) => {
     if (Platform.OS === 'android') {
@@ -253,8 +267,9 @@ const HomeScreen = ({ navigation }) => {
         <LinearGradient colors={['rgba(37,99,235,0.16)', 'rgba(124,58,237,0.12)']} style={styles.heroGlow} />
         <View style={styles.topRow}>
           <View>
-            <Text style={[styles.topLabel, { color: theme.textSecondary }]}>Good Morning, Sujal</Text>
-            <Text style={[styles.title, { color: theme.text }]}>Find your next ride</Text>
+            <Text style={[styles.topLabel, { color: theme.textSecondary }]}>{greeting}</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Where are you going today?</Text>
+            <Text style={styles.heroSubline}>Find affordable campus rides</Text>
           </View>
           <View style={styles.headerActions}>
             <Pressable style={[styles.themeToggle, { borderColor: theme.border, backgroundColor: theme.surface }]} onPress={toggleTheme}>
@@ -289,6 +304,18 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.filtersGrid}>
+          <View style={styles.quickChipsRow}>
+            <Pressable style={[styles.quickChip, onlyToday && styles.quickChipActive]} onPress={() => setOnlyToday((previous) => !previous)}>
+              <Text style={[styles.quickChipText, onlyToday && styles.quickChipTextActive]}>📅 Today</Text>
+            </Pressable>
+            <Pressable style={[styles.quickChip, under50 && styles.quickChipActive]} onPress={() => setUnder50((previous) => !previous)}>
+              <Text style={[styles.quickChipText, under50 && styles.quickChipTextActive]}>💰 Under ₹50</Text>
+            </Pressable>
+            <Pressable style={[styles.quickChip, onlyAvailable && styles.quickChipActive]} onPress={() => setOnlyAvailable((previous) => !previous)}>
+              <Text style={[styles.quickChipText, onlyAvailable && styles.quickChipTextActive]}>🚗 Available</Text>
+            </Pressable>
+          </View>
+
           <View style={[styles.filterInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
             <Ionicons name="calendar-outline" size={16} color="#8C98A8" />
             <Pressable style={styles.datePressArea} onPress={() => setShowDatePicker(true)}>
@@ -382,6 +409,10 @@ const HomeScreen = ({ navigation }) => {
     maxPrice,
     sortBy,
     filteredRides.length,
+    greeting,
+    onlyToday,
+    under50,
+    onlyAvailable,
     goToNotifications,
     onSortByTime,
     onSortByPrice
@@ -542,10 +573,9 @@ const styles = StyleSheet.create({
   },
   topLabel: {
     color: colors.mutedText,
-    fontSize: tokens.typography.caption,
+    fontSize: 14,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.2,
     marginBottom: 4
   },
   mapIconWrap: {
@@ -561,6 +591,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.3
+  },
+  heroSubline: {
+    marginTop: 4,
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: '600'
   },
   searchWrap: {
     flexDirection: 'row',
@@ -582,6 +618,31 @@ const styles = StyleSheet.create({
   filtersGrid: {
     marginTop: 12,
     gap: 10
+  },
+  quickChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  quickChip: {
+    borderWidth: 1,
+    borderColor: '#D7E4FF',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  quickChipActive: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#93C5FD'
+  },
+  quickChipText: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  quickChipTextActive: {
+    color: '#1a56db'
   },
   filterInputWrap: {
     height: 44,

@@ -3,7 +3,6 @@ import { Animated, Pressable, StyleSheet, Text, View, Platform } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import CustomButton from './CustomButton';
 import AnimatedReveal from './AnimatedReveal';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
@@ -56,6 +55,13 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const averageRating = Number(ratingSummary?.averageRating || 0);
   const totalRideCount = Number(ratingSummary?.totalRideCount || 0);
   const ratingBadge = getRatingBadge(averageRating, totalRideCount);
+  const accentColor = isFull ? '#ef4444' : '#10b981';
+  const driverInitials = String(driverName || 'R')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 
   const animateTo = (toValue, isPress = false) => {
     if (isPress && Platform.OS !== 'web' && Haptics?.impactAsync) {
@@ -105,7 +111,8 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
           onPressIn={() => animateTo(0.97, true)} 
           onPressOut={() => animateTo(1)}
         >
-          <LinearGradient colors={['rgba(37,99,235,0.12)', 'rgba(124,58,237,0.06)']} style={styles.topStrip} />
+          <LinearGradient colors={['rgba(26,86,219,0.12)', 'rgba(26,86,219,0.05)']} style={styles.topStrip} />
+          <View style={[styles.leftAccent, { backgroundColor: accentColor }]} />
 
           <View style={styles.routeRow}>
             <View style={styles.routeIconWrap}>
@@ -147,8 +154,8 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
             </View>
           </View>
 
-          <View style={styles.metaRow}>
-            <Ionicons name="person-outline" size={16} color={colors.mutedText} />
+          <View style={styles.driverRow}>
+            <View style={styles.driverAvatar}><Text style={styles.driverAvatarText}>{driverInitials || 'RB'}</Text></View>
             <Text style={styles.meta}>Driver: {driverName}</Text>
           </View>
 
@@ -189,9 +196,13 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
               </Text>
             </View>
           </View>
-        </Pressable>
 
-        {onPress ? <CustomButton title={actionLabel} onPress={onPress} variant="secondary" style={styles.cta} icon="arrow-forward" /> : null}
+          {onPress ? (
+            <View style={styles.linkWrap}>
+              <Text style={styles.linkText}>{actionLabel} →</Text>
+            </View>
+          ) : null}
+        </Pressable>
       </Animated.View>
     </AnimatedReveal>
   );
@@ -239,7 +250,15 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
     marginBottom: 14,
     overflow: 'hidden',
+    paddingLeft: 18,
     ...tokens.shadows.soft
+  },
+  leftAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5
   },
   highlightCard: {
     borderColor: '#BFD2FF',
@@ -304,6 +323,25 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.mutedText
+  },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8
+  },
+  driverAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  driverAvatarText: {
+    color: '#1a56db',
+    fontSize: 10,
+    fontWeight: '900'
   },
   todayBadge: {
     borderRadius: 999,
@@ -372,8 +410,13 @@ const styles = StyleSheet.create({
   seatTextLow: {
     color: '#991B1B'
   },
-  cta: {
-    marginTop: 8
+  linkWrap: {
+    marginTop: 6
+  },
+  linkText: {
+    color: '#1a56db',
+    fontSize: 13,
+    fontWeight: '800'
   },
   ratingRow: {
     marginBottom: 2,

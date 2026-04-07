@@ -87,6 +87,23 @@ const CreateRideScreen = () => {
   }, []);
 
   useEffect(() => {
+    const routeFilled = form.source.trim() && form.destination.trim();
+    const detailsFilled = isValidRideDateInput(form.dateTime) && isPositiveNumber(form.price) && isPositiveWholeNumber(form.seatsAvailable);
+
+    if (routeFilled && detailsFilled) {
+      setStep(3);
+      return;
+    }
+
+    if (routeFilled) {
+      setStep(2);
+      return;
+    }
+
+    setStep(1);
+  }, [form.source, form.destination, form.dateTime, form.price, form.seatsAvailable]);
+
+  useEffect(() => {
     const checkVehicleDetails = async () => {
       try {
         setCheckingVehicle(true);
@@ -153,6 +170,17 @@ const CreateRideScreen = () => {
       ...prev,
       [field]: nextFieldError
     }));
+  };
+
+  const bumpPrice = (delta) => {
+    const next = Math.max(0, Number(form.price || 0) + delta);
+    setField('price', String(next));
+  };
+
+  const bumpSeats = (delta) => {
+    const current = Number(form.seatsAvailable || 1);
+    const next = Math.max(1, current + delta);
+    setField('seatsAvailable', String(next));
   };
 
   const validateForm = ({ source, destination, dateTime, price, seatsAvailable }) => {
@@ -328,6 +356,23 @@ const CreateRideScreen = () => {
             </View>
           </View>
 
+          <View style={styles.stepRow}>
+            {[1, 2, 3].map((stepItem) => (
+              <View key={stepItem} style={styles.stepItemWrap}>
+                <View style={[styles.stepDot, step >= stepItem && styles.stepDotActive]}>
+                  <Text style={[styles.stepDotText, step >= stepItem && styles.stepDotTextActive]}>{stepItem}</Text>
+                </View>
+                {stepItem < 3 ? <View style={[styles.stepLine, step > stepItem && styles.stepLineActive]} /> : null}
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.stepLabelsRow}>
+            <Text style={styles.stepLabelText}>Route</Text>
+            <Text style={styles.stepLabelText}>Details</Text>
+            <Text style={styles.stepLabelText}>Confirm</Text>
+          </View>
+
           <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
           <InputField label="Destination" value={form.destination} onChangeText={(value) => setField('destination', value)} placeholder="City / Area" error={errors.destination} icon="location-outline" />
           <View style={styles.dateFieldWrap}>
@@ -366,21 +411,34 @@ const CreateRideScreen = () => {
             </View>
           ) : null}
 
-          <InputField label="Price (₹)" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" />
-          <InputField
-            label="Seats Available"
-            value={form.seatsAvailable}
-            onChangeText={(value) => setField('seatsAvailable', value)}
-            placeholder="3"
-            keyboardType="numeric"
-            error={errors.seatsAvailable}
-            icon="people-outline"
-          />
+          <View style={styles.counterCard}>
+            <Text style={styles.counterTitle}>Price (₹)</Text>
+            <View style={styles.counterRow}>
+              <Pressable style={styles.counterBtn} onPress={() => bumpPrice(-10)}><Ionicons name="remove" size={18} color={colors.primary} /></Pressable>
+              <InputField label="Price" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" style={styles.counterInput} />
+              <Pressable style={styles.counterBtn} onPress={() => bumpPrice(10)}><Ionicons name="add" size={18} color={colors.primary} /></Pressable>
+            </View>
+          </View>
+
+          <View style={styles.counterCard}>
+            <Text style={styles.counterTitle}>Seats Available</Text>
+            <View style={styles.seatsCounterRow}>
+              <Pressable style={styles.counterBtn} onPress={() => bumpSeats(-1)}><Ionicons name="remove" size={18} color={colors.primary} /></Pressable>
+              <Text style={styles.seatsCounterText}>{form.seatsAvailable || '1'}</Text>
+              <Pressable style={styles.counterBtn} onPress={() => bumpSeats(1)}><Ionicons name="add" size={18} color={colors.primary} /></Pressable>
+            </View>
+            {!!errors.seatsAvailable && <Text style={styles.dateFieldError}>{errors.seatsAvailable}</Text>}
+          </View>
 
           {!vehicleReady && !checkingVehicle ? (
             <View style={styles.warningCard}>
               <Ionicons name="warning-outline" size={18} color="#B45309" />
-              <Text style={styles.warningText}>Please add vehicle details before creating a ride</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warningText}>Please add vehicle details before creating a ride</Text>
+                <Pressable onPress={() => router.push('/(tabs)/profile')}>
+                  <Text style={styles.warningLink}>Edit profile</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
@@ -423,6 +481,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     gap: 10
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6
+  },
+  stepItemWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1
+  },
+  stepDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  stepDotActive: {
+    borderColor: '#1a56db',
+    backgroundColor: '#DBEAFE'
+  },
+  stepDotText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B'
+  },
+  stepDotTextActive: {
+    color: '#1a56db'
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 8
+  },
+  stepLineActive: {
+    backgroundColor: '#93C5FD'
+  },
+  stepLabelsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 14
+  },
+  stepLabelText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '700'
   },
   titleIcon: {
     width: 34,
@@ -491,6 +601,53 @@ const styles = StyleSheet.create({
   iosPickerActions: {
     marginBottom: 12
   },
+  counterCard: {
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#D9E3F8',
+    borderRadius: tokens.radius.md,
+    padding: 10,
+    backgroundColor: '#FFFFFF'
+  },
+  counterTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 8
+  },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  counterInput: {
+    flex: 1,
+    marginBottom: 0
+  },
+  counterBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  seatsCounterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 6
+  },
+  seatsCounterText: {
+    minWidth: 32,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text
+  },
   warningCard: {
     marginBottom: 12,
     borderWidth: 1,
@@ -508,6 +665,12 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontSize: 13,
     fontWeight: '700'
+  },
+  warningLink: {
+    marginTop: 4,
+    color: '#1a56db',
+    fontSize: 12,
+    fontWeight: '800'
   },
   limitBanner: {
     marginBottom: 16,

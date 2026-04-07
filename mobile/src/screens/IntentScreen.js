@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -135,10 +135,21 @@ const IntentScreen = () => {
           <Text style={styles.intentRoute}>{item.source} → {item.destination}</Text>
           <Text style={styles.intentMeta}>When: {formatDisplayDate(item.dateTime || item.date)}</Text>
           <Text style={styles.intentMeta}>By: {item?.user?.name || 'Anonymous'}</Text>
+          <CustomButton
+            title="Match Ride"
+            variant="secondary"
+            icon="car-outline"
+            style={styles.matchButton}
+            onPress={() => {
+              setField('source', item.source || '');
+              setField('destination', item.destination || '');
+              Toast.show({ type: 'info', text1: 'Intent copied', text2: 'Now search or create a matching ride.' });
+            }}
+          />
         </AnimatedReveal>
       </View>
     ),
-    []
+    [setField]
   );
 
   const keyExtractor = useCallback((item, index) => item?._id || String(index), []);
@@ -187,12 +198,13 @@ const IntentScreen = () => {
             icon="flag-outline"
           />
           <InputField
-            label="Date & Time (ISO)"
+            label="Date & Time"
             value={form.dateTime}
             onChangeText={(value) => setField('dateTime', value)}
-            placeholder="2026-04-10T16:00:00.000Z"
+            placeholder="Select date and time"
             error={errors.dateTime}
             icon="calendar-outline"
+            type={Platform.OS === 'web' ? 'datetime-local' : undefined}
           />
           <CustomButton
             title="Post Intent"
@@ -320,6 +332,10 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     ...tokens.shadows.soft
+  },
+  matchButton: {
+    marginTop: 10,
+    maxWidth: 150
   },
   intentRoute: {
     fontWeight: '700',

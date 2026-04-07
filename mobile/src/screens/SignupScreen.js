@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
@@ -91,7 +91,7 @@ const SignupScreen = ({ navigation }) => {
 
         <View style={styles.heroSection}>
           <Text style={styles.title}>Get moving in minutes</Text>
-          <Text style={styles.subtitle}>Fast, safe and affordable campus rides.</Text>
+          <Text style={styles.subtitle}>Professional ride-sharing experience, built for campus life.</Text>
         </View>
 
         <PremiumCard glass elevation="md">
@@ -140,8 +140,17 @@ const SignupScreen = ({ navigation }) => {
             fullWidth
             style={styles.cta}
           />
+
+          <View style={styles.socialWrap}>
+            <Text style={styles.socialLabel}>or continue with</Text>
+            <View style={styles.socialRow}>
+              <Pressable style={styles.socialButton}><Ionicons name="logo-google" size={16} color={colors.text} /><Text style={styles.socialText}>Google</Text></Pressable>
+              <Pressable style={styles.socialButton}><Ionicons name="logo-apple" size={16} color={colors.text} /><Text style={styles.socialText}>Apple</Text></Pressable>
+            </View>
+          </View>
+
           <Text style={styles.legalText}>
-            By creating an account you agree to our{' '}
+            By signing up you agree to our{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Terms of Service</Text>
             {' '}and{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Privacy Policy</Text>
@@ -196,6 +205,36 @@ const styles = StyleSheet.create({
   },
   cta: {
     marginTop: tokens.spacing.md
+  },
+  socialWrap: {
+    marginTop: 10
+  },
+  socialLabel: {
+    textAlign: 'center',
+    color: colors.textTertiary,
+    fontSize: 12,
+    marginBottom: 8
+  },
+  socialRow: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  socialButton: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF'
+  },
+  socialText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700'
   },
   legalText: {
     marginTop: tokens.spacing.md,

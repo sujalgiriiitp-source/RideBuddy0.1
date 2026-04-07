@@ -312,14 +312,25 @@ const RideDetailsScreen = ({ route, navigation }) => {
       <ScreenContainer>
         <AnimatedReveal>
           <View style={styles.heroCard}>
-            <LinearGradient colors={['rgba(37,99,235,0.15)', 'rgba(124,58,237,0.1)']} style={styles.heroGlow} />
-            <Text style={styles.route}>{ride.source || ride.from} → {ride.destination || ride.to}</Text>
-            <View style={styles.metaRow}>
-              <Ionicons name="time-outline" size={16} color={colors.mutedText} />
-              <Text style={styles.meta}>{formatReadableDateTime(ride.dateTime || ride.date)}</Text>
+            <LinearGradient colors={['#1a56db', '#1e40af']} style={styles.heroGlow} />
+            <Text style={styles.routeHeroTitle}>{ride.source || ride.from} → {ride.destination || ride.to}</Text>
+
+            <View style={styles.routeVisualRow}>
+              <View style={styles.routePoint}><Text style={styles.routePointText}>📍 {ride.source || ride.from}</Text></View>
+              <Text style={styles.routeDots}>⋯⋯⋯⋯</Text>
+              <View style={styles.routePoint}><Text style={styles.routePointText}>🏁 {ride.destination || ride.to}</Text></View>
             </View>
-            <View style={styles.statsRow}>
-              <Text style={styles.price}>₹{ride.price ?? 0}</Text>
+
+            <View style={styles.infoGrid}>
+              <View style={styles.infoGridCard}><Text style={styles.infoGridLabel}>📅 Date</Text><Text style={styles.infoGridValue}>{new Date(ride.dateTime || ride.date).toLocaleDateString()}</Text></View>
+              <View style={styles.infoGridCard}><Text style={styles.infoGridLabel}>⏰ Time</Text><Text style={styles.infoGridValue}>{new Date(ride.dateTime || ride.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text></View>
+              <View style={styles.infoGridCard}><Text style={styles.infoGridLabel}>💰 Price</Text><Text style={styles.infoGridValue}>₹{ride.price ?? 0}</Text></View>
+              <View style={styles.infoGridCard}><Text style={styles.infoGridLabel}>👥 Seats</Text><Text style={styles.infoGridValue}>{ride.seatsAvailable ?? ride.availableSeats ?? 0}</Text></View>
+            </View>
+
+            <View style={styles.metaRow}>
+              <Ionicons name="time-outline" size={16} color={'rgba(255,255,255,0.9)'} />
+              <Text style={styles.metaLight}>{formatReadableDateTime(ride.dateTime || ride.date)}</Text>
               <View style={styles.seatBadge}>
                 <Text style={styles.seatText}>{ride.seatsAvailable ?? ride.availableSeats ?? 0} seats left</Text>
               </View>
@@ -493,6 +504,59 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 12
   },
+  routeHeroTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 10
+  },
+  routeVisualRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 12
+  },
+  routePoint: {
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  routePointText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  routeDots: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 18
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10
+  },
+  infoGridCard: {
+    width: '48%',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 8
+  },
+  infoGridLabel: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 11,
+    fontWeight: '700'
+  },
+  infoGridValue: {
+    marginTop: 2,
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800'
+  },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -501,6 +565,10 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.mutedText
+  },
+  metaLight: {
+    color: '#FFFFFF',
+    fontWeight: '600'
   },
   statsRow: {
     flexDirection: 'row',
