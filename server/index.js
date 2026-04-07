@@ -9,6 +9,8 @@ const morgan = require('morgan');
 const { Server } = require('socket.io');
 const routes = require('./src/routes');
 const bookingRoutes = require('./src/routes/bookings');
+const conversationRoutes = require('./src/routes/conversationRoutes');
+const messageRoutes = require('./src/routes/messageRoutes');
 const logger = require('./src/config/logger');
 const { setSocketServer } = require('./src/config/socket');
 const setupRideTrackingSocket = require('./src/socket/rideTrackingSocket');
@@ -42,6 +44,8 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);

@@ -24,7 +24,7 @@ const extractApiErrorMessage = (error, fallback = 'Something went wrong. Please 
   );
 };
 
-const RideDetailsScreen = ({ route }) => {
+const RideDetailsScreen = ({ route, navigation }) => {
   const { rideId } = route.params;
   const { addInAppNotification } = useNotifications();
   const { user } = useAuth();
@@ -220,7 +220,7 @@ const RideDetailsScreen = ({ route }) => {
         }
       });
 
-      const conversation = response?.conversation || response?.data;
+      const conversation = response?.conversation || response?.data?.conversation || response?.data;
       if (!conversation?._id) {
         throw new Error('Unable to open conversation');
       }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Image, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -74,6 +75,12 @@ const ConversationList = ({ navigation }) => {
       isFetchingRef.current = false;
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations({ force: true });
+    }, [])
+  );
 
   const handleRefresh = () => {
     if (isFetchingRef.current) {
