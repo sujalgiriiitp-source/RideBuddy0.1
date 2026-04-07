@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
@@ -14,6 +14,8 @@ import tokens from '../theme/tokens';
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const SignupScreen = ({ navigation }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 980;
   const { signup } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [loading, setLoading] = useState(false);
@@ -78,23 +80,41 @@ const SignupScreen = ({ navigation }) => {
 
   return (
     <ScreenTransition variant="fadeSlide">
-      <View style={styles.container}>
-        <View style={styles.brandRow}>
-          <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
-            <Ionicons name="car-sport" size={20} color={colors.white} />
+      <View style={[styles.container, isDesktop && styles.desktopContainer]}>
+        {isDesktop ? (
+          <LinearGradient colors={['#0B1E4B', '#1a56db', '#1e40af']} style={styles.leftPanel}>
+            <View style={styles.brandRow}>
+              <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+                <Ionicons name="car-sport" size={20} color={colors.white} />
+              </LinearGradient>
+              <View>
+                <Text style={styles.leftTitle}>RideBuddy</Text>
+                <Text style={styles.leftSubtitle}>Share rides, save money</Text>
+              </View>
+            </View>
+            <View style={styles.illustrationCard}>
+              <Ionicons name="car-sport-outline" size={110} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.illustrationText}>Join a premium commuter network and move smarter every day.</Text>
+            </View>
           </LinearGradient>
-          <View>
-            <Text style={styles.brandTitle}>RideBuddy</Text>
-            <Text style={styles.brandSub}>Share rides, save money</Text>
+        ) : (
+          <View style={styles.brandRow}>
+            <LinearGradient colors={tokens.gradients.primary} style={styles.logoBubble}>
+              <Ionicons name="car-sport" size={20} color={colors.white} />
+            </LinearGradient>
+            <View>
+              <Text style={styles.brandTitle}>RideBuddy</Text>
+              <Text style={styles.brandSub}>Share rides, save money</Text>
+            </View>
           </View>
-        </View>
+        )}
 
-        <View style={styles.heroSection}>
+        <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
           <Text style={styles.title}>Get moving in minutes</Text>
-          <Text style={styles.subtitle}>Professional ride-sharing experience, built for campus life.</Text>
+          <Text style={styles.subtitle}>Fast, safe and affordable campus rides.</Text>
         </View>
 
-        <PremiumCard glass elevation="md">
+        <PremiumCard glass elevation="md" style={[styles.formCard, isDesktop && styles.formCardDesktop]}>
           <PremiumInput
             label="Full name"
             value={form.name}
@@ -140,17 +160,15 @@ const SignupScreen = ({ navigation }) => {
             fullWidth
             style={styles.cta}
           />
-
           <View style={styles.socialWrap}>
             <Text style={styles.socialLabel}>or continue with</Text>
             <View style={styles.socialRow}>
-              <Pressable style={styles.socialButton}><Ionicons name="logo-google" size={16} color={colors.text} /><Text style={styles.socialText}>Google</Text></Pressable>
-              <Pressable style={styles.socialButton}><Ionicons name="logo-apple" size={16} color={colors.text} /><Text style={styles.socialText}>Apple</Text></Pressable>
+              <Pressable style={styles.socialBtn}><Ionicons name="logo-google" size={18} color="#DB4437" /><Text style={styles.socialText}>Google</Text></Pressable>
+              <Pressable style={styles.socialBtn}><Ionicons name="logo-apple" size={18} color="#111827" /><Text style={styles.socialText}>Apple</Text></Pressable>
             </View>
           </View>
-
           <Text style={styles.legalText}>
-            By signing up you agree to our{' '}
+            By signing up, you agree to our{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Terms of Service</Text>
             {' '}and{' '}
             <Text style={styles.legalLink} onPress={() => navigation.navigate('Legal')}>Privacy Policy</Text>
@@ -166,6 +184,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: tokens.spacing.xl
+  },
+  desktopContainer: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between'
+  },
+  leftPanel: {
+    flex: 1,
+    borderRadius: tokens.radius.xxl,
+    padding: tokens.spacing['3xl'],
+    marginRight: tokens.spacing['2xl'],
+    justifyContent: 'space-between'
   },
   brandRow: {
     flexDirection: 'row',
@@ -185,13 +215,48 @@ const styles = StyleSheet.create({
     ...tokens.typography.styles.h5,
     color: colors.text
   },
+  leftTitle: {
+    ...tokens.typography.styles.h2,
+    color: '#FFFFFF'
+  },
+  leftSubtitle: {
+    ...tokens.typography.styles.body,
+    color: 'rgba(255,255,255,0.85)'
+  },
   brandSub: {
     marginTop: tokens.spacing.xs,
     color: colors.textTertiary,
     ...tokens.typography.styles.caption
   },
+  illustrationCard: {
+    marginTop: tokens.spacing['3xl'],
+    borderRadius: tokens.radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    padding: tokens.spacing.xl,
+    alignItems: 'center'
+  },
+  illustrationText: {
+    marginTop: tokens.spacing.md,
+    color: '#E2E8F0',
+    textAlign: 'center',
+    fontWeight: '700',
+    lineHeight: 22
+  },
   heroSection: {
     marginBottom: tokens.spacing['2xl']
+  },
+  heroSectionDesktop: {
+    display: 'none'
+  },
+  formCard: {
+    width: '100%'
+  },
+  formCardDesktop: {
+    flex: 1,
+    maxWidth: 520,
+    justifyContent: 'center'
   },
   title: {
     ...tokens.typography.styles.h2,
@@ -207,34 +272,35 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.md
   },
   socialWrap: {
-    marginTop: 10
+    marginTop: tokens.spacing.lg
   },
   socialLabel: {
     textAlign: 'center',
     color: colors.textTertiary,
     fontSize: 12,
-    marginBottom: 8
+    marginBottom: tokens.spacing.sm,
+    fontWeight: '600'
   },
   socialRow: {
     flexDirection: 'row',
-    gap: 8
+    gap: 10
   },
-  socialButton: {
+  socialBtn: {
     flex: 1,
-    height: 44,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#D1D5DB',
     borderRadius: 12,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: '#FFFFFF'
   },
   socialText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '700'
+    color: '#374151',
+    fontWeight: '700',
+    fontSize: 13
   },
   legalText: {
     marginTop: tokens.spacing.md,

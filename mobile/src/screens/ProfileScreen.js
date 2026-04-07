@@ -909,18 +909,19 @@ const styles = StyleSheet.create({
     color: '#166534'
   },
   identityRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 16
+    marginBottom: 16,
+    justifyContent: 'center'
   },
   avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
     backgroundColor: '#EEF4FF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12
+    marginBottom: 10
   },
   avatarInitials: {
     color: '#1D4ED8',
@@ -929,14 +930,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   avatarPhoto: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    marginRight: 12,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    marginBottom: 10,
     backgroundColor: '#EEF4FF'
   },
   identityTextWrap: {
-    flex: 1
+    alignItems: 'center'
   },
   name: {
     fontSize: tokens.typography.h1,
@@ -948,7 +949,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     color: colors.mutedText,
-    fontWeight: '600'
+    fontWeight: '600',
+    textAlign: 'center'
   },
   infoCard: {
     borderWidth: 1,

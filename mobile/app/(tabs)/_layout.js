@@ -25,6 +25,15 @@ const getTabIconName = (routeName, focused) => {
   return focused ? 'ellipse' : 'ellipse-outline';
 };
 
+const getTabLabel = (routeName) => {
+  if (routeName === 'home') return 'Home';
+  if (routeName === 'create') return 'Create';
+  if (routeName === 'chat') return 'Chat';
+  if (routeName === 'intent') return 'Intent';
+  if (routeName === 'profile') return 'Profile';
+  return '';
+};
+
 export default function TabsLayout() {
   const { theme } = useTheme();
   const { unreadCount } = useChatContext();
@@ -37,32 +46,36 @@ export default function TabsLayout() {
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarShowLabel: false,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '700',
+          marginBottom: 4
+        },
         tabBarStyle: {
-          height: 70,
-          paddingTop: 9,
-          paddingBottom: 10,
+          height: 72,
+          paddingTop: 10,
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          backgroundColor: '#FFFFFF'
+          borderTopColor: '#DDE5F5',
+          backgroundColor: theme.card
         },
         tabBarIcon: ({ color, focused }) => (
           <View style={{ position: 'relative' }}>
             <View
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
                 transform: [{ scale: focused ? 1.08 : 1 }],
                 borderRadius: 999,
                 paddingHorizontal: focused ? 10 : 3,
-                paddingVertical: 6,
-                backgroundColor: focused ? '#DBEAFE' : 'transparent',
-                gap: 6
+                paddingVertical: focused ? 6 : 3,
+                backgroundColor: focused ? 'rgba(26,86,219,0.14)' : 'transparent',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: focused ? 6 : 0
               }}
             >
               <Ionicons name={getTabIconName(route.name, focused)} size={22} color={color} />
               {focused ? (
-                <Text style={{ color: '#1a56db', fontSize: 11, fontWeight: '800', textTransform: 'capitalize' }}>
-                  {route.name}
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '800' }}>
+                  {getTabLabel(route.name)}
                 </Text>
               ) : null}
             </View>
@@ -72,8 +85,7 @@ export default function TabsLayout() {
               </View>
             )}
           </View>
-        ),
-        tabBarLabel: ({ focused }) => (focused ? null : null)
+        )
       })}
     >
       <Tabs.Screen name="home" options={{ title: 'Home' }} />

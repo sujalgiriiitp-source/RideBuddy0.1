@@ -9,7 +9,7 @@ import tokens from '../theme/tokens';
 import { formatReadableDateTime, MIN_RIDE_YEAR, parseDateValue } from '../utils/dateTime';
 import { formatRatingLabel, getRatingBadge } from '../utils/rating';
 
-const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, highlight = false, ratingSummary }) => {
+const RideCard = ({ ride, onPress, index = 0, highlight = false, ratingSummary }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const cardOpacity = useRef(new Animated.Value(1)).current;
   const shadowAnim = useRef(new Animated.Value(0)).current;
@@ -55,12 +55,11 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const averageRating = Number(ratingSummary?.averageRating || 0);
   const totalRideCount = Number(ratingSummary?.totalRideCount || 0);
   const ratingBadge = getRatingBadge(averageRating, totalRideCount);
-  const accentColor = isFull ? '#ef4444' : '#10b981';
-  const driverInitials = String(driverName || 'R')
+  const driverInitials = String(driverName || 'RB')
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
+    .map((item) => item.charAt(0).toUpperCase())
     .join('');
 
   const animateTo = (toValue, isPress = false) => {
@@ -111,12 +110,12 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
           onPressIn={() => animateTo(0.97, true)} 
           onPressOut={() => animateTo(1)}
         >
-          <LinearGradient colors={['rgba(26,86,219,0.12)', 'rgba(26,86,219,0.05)']} style={styles.topStrip} />
-          <View style={[styles.leftAccent, { backgroundColor: accentColor }]} />
+          <LinearGradient colors={['rgba(37,99,235,0.12)', 'rgba(124,58,237,0.06)']} style={styles.topStrip} />
+          <View style={[styles.accentBar, isFull ? styles.accentBarFull : styles.accentBarAvailable]} />
 
           <View style={styles.routeRow}>
-            <View style={styles.routeIconWrap}>
-              <Ionicons name="navigate" size={14} color={colors.primary} />
+            <View style={styles.driverAvatar}>
+              <Text style={styles.driverAvatarText}>{driverInitials || 'RB'}</Text>
             </View>
             <Text style={styles.route}>{source} → {destination}</Text>
             <View style={[styles.statusBadge, isFull ? styles.statusFull : styles.statusAvailable]}>
@@ -154,10 +153,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
             </View>
           </View>
 
-          <View style={styles.driverRow}>
-            <View style={styles.driverAvatar}><Text style={styles.driverAvatarText}>{driverInitials || 'RB'}</Text></View>
-            <Text style={styles.meta}>Driver: {driverName}</Text>
-          </View>
+          <View style={styles.metaRow}><Ionicons name="person-outline" size={16} color={colors.mutedText} /><Text style={styles.meta}>Driver: {driverName}</Text></View>
 
           {numberPlate ? (
             <View style={styles.metaRow}>
@@ -198,9 +194,7 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
           </View>
 
           {onPress ? (
-            <View style={styles.linkWrap}>
-              <Text style={styles.linkText}>{actionLabel} →</Text>
-            </View>
+            <Text style={styles.viewDetailsLink}>View Details →</Text>
           ) : null}
         </Pressable>
       </Animated.View>
@@ -213,7 +207,6 @@ const areEqualRideCardProps = (prevProps, nextProps) => {
   const nextRide = nextProps.ride || {};
 
   const didBasePropsChange =
-    prevProps.actionLabel !== nextProps.actionLabel ||
     prevProps.index !== nextProps.index ||
     prevProps.highlight !== nextProps.highlight ||
     Boolean(prevProps.onPress) !== Boolean(nextProps.onPress) ||
@@ -248,17 +241,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DCE5F7',
     padding: tokens.spacing.md,
+    paddingLeft: tokens.spacing.lg,
     marginBottom: 14,
     overflow: 'hidden',
-    paddingLeft: 18,
     ...tokens.shadows.soft
-  },
-  leftAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5
   },
   highlightCard: {
     borderColor: '#BFD2FF',
@@ -272,19 +258,37 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 20
   },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5
+  },
+  accentBarAvailable: {
+    backgroundColor: '#10b981'
+  },
+  accentBarFull: {
+    backgroundColor: '#ef4444'
+  },
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 10
   },
-  routeIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+  driverAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  driverAvatarText: {
+    color: '#1D4ED8',
+    fontSize: 11,
+    fontWeight: '800'
   },
   route: {
     flex: 1,
@@ -323,25 +327,6 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.mutedText
-  },
-  driverRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8
-  },
-  driverAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#DBEAFE',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  driverAvatarText: {
-    color: '#1a56db',
-    fontSize: 10,
-    fontWeight: '900'
   },
   todayBadge: {
     borderRadius: 999,
@@ -410,13 +395,14 @@ const styles = StyleSheet.create({
   seatTextLow: {
     color: '#991B1B'
   },
-  linkWrap: {
-    marginTop: 6
+  cta: {
+    marginTop: 8
   },
-  linkText: {
+  viewDetailsLink: {
+    marginTop: 10,
     color: '#1a56db',
-    fontSize: 13,
-    fontWeight: '800'
+    fontWeight: '800',
+    fontSize: 13
   },
   ratingRow: {
     marginBottom: 2,

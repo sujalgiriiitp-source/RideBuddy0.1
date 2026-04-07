@@ -42,6 +42,11 @@ const CreateRideScreen = () => {
   
   const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
+  const computedStep = useMemo(() => {
+    if (!form.source.trim()) return 1;
+    if (!form.destination.trim() || !form.dateTime.trim()) return 2;
+    return 3;
+  }, [form]);
   const minimumRideDate = useMemo(() => getMinimumRideDate(), []);
   const selectedDate = useMemo(
     () => parseDateValue(form.dateTime) || minimumRideDate,
@@ -85,23 +90,6 @@ const CreateRideScreen = () => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    const routeFilled = form.source.trim() && form.destination.trim();
-    const detailsFilled = isValidRideDateInput(form.dateTime) && isPositiveNumber(form.price) && isPositiveWholeNumber(form.seatsAvailable);
-
-    if (routeFilled && detailsFilled) {
-      setStep(3);
-      return;
-    }
-
-    if (routeFilled) {
-      setStep(2);
-      return;
-    }
-
-    setStep(1);
-  }, [form.source, form.destination, form.dateTime, form.price, form.seatsAvailable]);
 
   useEffect(() => {
     const checkVehicleDetails = async () => {
@@ -170,17 +158,6 @@ const CreateRideScreen = () => {
       ...prev,
       [field]: nextFieldError
     }));
-  };
-
-  const bumpPrice = (delta) => {
-    const next = Math.max(0, Number(form.price || 0) + delta);
-    setField('price', String(next));
-  };
-
-  const bumpSeats = (delta) => {
-    const current = Number(form.seatsAvailable || 1);
-    const next = Math.max(1, current + delta);
-    setField('seatsAvailable', String(next));
   };
 
   const validateForm = ({ source, destination, dateTime, price, seatsAvailable }) => {
@@ -323,6 +300,23 @@ const CreateRideScreen = () => {
 
   return (
     <ScreenContainer contentContainerStyle={styles.screenContent}>
+      <AnimatedReveal>
+        <View style={styles.stepWrap}>
+          {['Route', 'Details', 'Confirm'].map((label, index) => {
+            const stepNumber = index + 1;
+            const active = stepNumber <= computedStep;
+            return (
+              <View key={label} style={styles.stepItem}>
+                <View style={[styles.stepDot, active && styles.stepDotActive]}>
+                  <Text style={[styles.stepDotText, active && styles.stepDotTextActive]}>{stepNumber}</Text>
+                </View>
+                <Text style={[styles.stepLabel, active && styles.stepLabelActive]}>{label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </AnimatedReveal>
+
       {tier === SUBSCRIPTION_TIERS.FREE && (
         <AnimatedReveal>
           <TouchableOpacity 
@@ -354,23 +348,6 @@ const CreateRideScreen = () => {
               <Text style={styles.title}>Create Ride</Text>
               <Text style={styles.subtitle}>Select a date and time to publish your ride.</Text>
             </View>
-          </View>
-
-          <View style={styles.stepRow}>
-            {[1, 2, 3].map((stepItem) => (
-              <View key={stepItem} style={styles.stepItemWrap}>
-                <View style={[styles.stepDot, step >= stepItem && styles.stepDotActive]}>
-                  <Text style={[styles.stepDotText, step >= stepItem && styles.stepDotTextActive]}>{stepItem}</Text>
-                </View>
-                {stepItem < 3 ? <View style={[styles.stepLine, step > stepItem && styles.stepLineActive]} /> : null}
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.stepLabelsRow}>
-            <Text style={styles.stepLabelText}>Route</Text>
-            <Text style={styles.stepLabelText}>Details</Text>
-            <Text style={styles.stepLabelText}>Confirm</Text>
           </View>
 
           <InputField label="Source" value={form.source} onChangeText={(value) => setField('source', value)} placeholder="City / Area" error={errors.source} icon="navigate-outline" />
@@ -412,20 +389,28 @@ const CreateRideScreen = () => {
           ) : null}
 
           <View style={styles.counterCard}>
-            <Text style={styles.counterTitle}>Price (₹)</Text>
+            <Text style={styles.counterLabel}>Price (₹)</Text>
             <View style={styles.counterRow}>
-              <Pressable style={styles.counterBtn} onPress={() => bumpPrice(-10)}><Ionicons name="remove" size={18} color={colors.primary} /></Pressable>
-              <InputField label="Price" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" style={styles.counterInput} />
-              <Pressable style={styles.counterBtn} onPress={() => bumpPrice(10)}><Ionicons name="add" size={18} color={colors.primary} /></Pressable>
+              <Pressable style={styles.counterBtn} onPress={() => setField('price', String(Math.max(0, Number(form.price || 0) - 10)))}>
+                <Ionicons name="remove" size={16} color="#1a56db" />
+              </Pressable>
+              <InputField label="" value={form.price} onChangeText={(value) => setField('price', value)} placeholder="120" keyboardType="numeric" error={errors.price} icon="wallet-outline" style={styles.counterInput} />
+              <Pressable style={styles.counterBtn} onPress={() => setField('price', String(Number(form.price || 0) + 10))}>
+                <Ionicons name="add" size={16} color="#1a56db" />
+              </Pressable>
             </View>
           </View>
 
           <View style={styles.counterCard}>
-            <Text style={styles.counterTitle}>Seats Available</Text>
-            <View style={styles.seatsCounterRow}>
-              <Pressable style={styles.counterBtn} onPress={() => bumpSeats(-1)}><Ionicons name="remove" size={18} color={colors.primary} /></Pressable>
-              <Text style={styles.seatsCounterText}>{form.seatsAvailable || '1'}</Text>
-              <Pressable style={styles.counterBtn} onPress={() => bumpSeats(1)}><Ionicons name="add" size={18} color={colors.primary} /></Pressable>
+            <Text style={styles.counterLabel}>Seats Available</Text>
+            <View style={styles.seatStepperRow}>
+              <Pressable style={styles.stepperBtn} onPress={() => setField('seatsAvailable', String(Math.max(1, Number(form.seatsAvailable || 1) - 1)))}>
+                <Ionicons name="remove" size={18} color="#1a56db" />
+              </Pressable>
+              <Text style={styles.seatCountText}>{Number(form.seatsAvailable || 1)}</Text>
+              <Pressable style={styles.stepperBtn} onPress={() => setField('seatsAvailable', String(Number(form.seatsAvailable || 1) + 1))}>
+                <Ionicons name="add" size={18} color="#1a56db" />
+              </Pressable>
             </View>
             {!!errors.seatsAvailable && <Text style={styles.dateFieldError}>{errors.seatsAvailable}</Text>}
           </View>
@@ -433,12 +418,10 @@ const CreateRideScreen = () => {
           {!vehicleReady && !checkingVehicle ? (
             <View style={styles.warningCard}>
               <Ionicons name="warning-outline" size={18} color="#B45309" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.warningText}>Please add vehicle details before creating a ride</Text>
-                <Pressable onPress={() => router.push('/(tabs)/profile')}>
-                  <Text style={styles.warningLink}>Edit profile</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.warningText}>Please add vehicle details before creating a ride</Text>
+              <Pressable onPress={() => router.push('/(tabs)/profile')}>
+                <Text style={styles.warningLink}>Edit profile</Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -468,6 +451,49 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...tokens.shadows.soft
   },
+  stepWrap: {
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: tokens.radius.lg,
+    borderWidth: 1,
+    borderColor: '#DCE6F8',
+    paddingHorizontal: 10,
+    paddingVertical: 10
+  },
+  stepItem: {
+    alignItems: 'center',
+    gap: 4
+  },
+  stepDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  stepDotActive: {
+    backgroundColor: '#1a56db'
+  },
+  stepDotText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#374151'
+  },
+  stepDotTextActive: {
+    color: '#FFFFFF'
+  },
+  stepLabel: {
+    fontSize: 11,
+    color: '#6b7280',
+    fontWeight: '700'
+  },
+  stepLabelActive: {
+    color: '#1a56db'
+  },
   cardGlow: {
     position: 'absolute',
     left: -10,
@@ -481,58 +507,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     gap: 10
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6
-  },
-  stepItemWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1
-  },
-  stepDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  stepDotActive: {
-    borderColor: '#1a56db',
-    backgroundColor: '#DBEAFE'
-  },
-  stepDotText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#64748B'
-  },
-  stepDotTextActive: {
-    color: '#1a56db'
-  },
-  stepLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: '#E2E8F0',
-    marginHorizontal: 8
-  },
-  stepLineActive: {
-    backgroundColor: '#93C5FD'
-  },
-  stepLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14
-  },
-  stepLabelText: {
-    color: '#64748B',
-    fontSize: 12,
-    fontWeight: '700'
   },
   titleIcon: {
     width: 34,
@@ -601,53 +575,6 @@ const styles = StyleSheet.create({
   iosPickerActions: {
     marginBottom: 12
   },
-  counterCard: {
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#D9E3F8',
-    borderRadius: tokens.radius.md,
-    padding: 10,
-    backgroundColor: '#FFFFFF'
-  },
-  counterTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-    marginBottom: 8
-  },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8
-  },
-  counterInput: {
-    flex: 1,
-    marginBottom: 0
-  },
-  counterBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  seatsCounterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 6
-  },
-  seatsCounterText: {
-    minWidth: 32,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text
-  },
   warningCard: {
     marginBottom: 12,
     borderWidth: 1,
@@ -667,10 +594,64 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   warningLink: {
-    marginTop: 4,
     color: '#1a56db',
+    fontWeight: '800',
+    fontSize: 12
+  },
+  counterCard: {
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#DCE6F8',
+    borderRadius: tokens.radius.lg,
+    backgroundColor: '#FFFFFF',
+    padding: 10
+  },
+  counterLabel: {
     fontSize: 12,
-    fontWeight: '800'
+    color: '#6b7280',
+    fontWeight: '700',
+    marginBottom: 8
+  },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  counterBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  counterInput: {
+    flex: 1,
+    marginBottom: 0
+  },
+  seatStepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 18,
+    paddingVertical: 8
+  },
+  stepperBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  seatCountText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1E3A8A',
+    minWidth: 30,
+    textAlign: 'center'
   },
   limitBanner: {
     marginBottom: 16,
