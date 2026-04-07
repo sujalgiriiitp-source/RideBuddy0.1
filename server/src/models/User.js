@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { SUBSCRIPTION_TIERS } = require('../config/subscriptionTiers');
 
 const userSchema = new mongoose.Schema(
   {
@@ -59,6 +60,27 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    subscriptionTier: {
+      type: String,
+      enum: ['FREE', 'PREMIUM', 'PRO'],
+      default: SUBSCRIPTION_TIERS.FREE
+    },
+    subscriptionStartDate: {
+      type: Date,
+      default: null
+    },
+    subscriptionEndDate: {
+      type: Date,
+      default: null
+    },
+    dailyRideCount: {
+      type: Number,
+      default: 0
+    },
+    lastRideResetDate: {
+      type: Date,
+      default: Date.now
     }
   },
   {

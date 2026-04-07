@@ -22,6 +22,30 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
   const displayDateTime = parsedRideDate && parsedRideDate.getFullYear() >= MIN_RIDE_YEAR
     ? formatReadableDateTime(dateTime)
     : 'Date not set';
+  const isToday = Boolean(parsedRideDate) && parsedRideDate.toDateString() === new Date().toDateString();
+  const timeRemainingLabel = (() => {
+    if (!parsedRideDate) {
+      return '';
+    }
+
+    const remainingMs = parsedRideDate.getTime() - Date.now();
+    if (remainingMs <= 0) {
+      return '';
+    }
+
+    const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+    if (remainingMinutes < 60) {
+      return `in ${remainingMinutes} min`;
+    }
+
+    const remainingHours = Math.ceil(remainingMinutes / 60);
+    if (remainingHours < 24) {
+      return `in ${remainingHours} hour${remainingHours === 1 ? '' : 's'}`;
+    }
+
+    const remainingDays = Math.ceil(remainingHours / 24);
+    return `in ${remainingDays} day${remainingDays === 1 ? '' : 's'}`;
+  })();
   const seatsLeft = ride.seatsAvailable ?? ride.availableSeats ?? ride.seats ?? 0;
   const driverName = ride?.createdBy?.name || ride?.user?.name || 'Unknown';
   const numberPlate = ride?.createdBy?.numberPlate || ride?.user?.numberPlate || '';
@@ -96,7 +120,19 @@ const RideCard = ({ ride, onPress, actionLabel = 'View Details', index = 0, high
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={16} color={colors.mutedText} />
             <Text style={styles.meta}>{displayDateTime}</Text>
+            {isToday ? (
+              <View style={styles.todayBadge}>
+                <Text style={styles.todayBadgeText}>TODAY</Text>
+              </View>
+            ) : null}
           </View>
+
+          {timeRemainingLabel ? (
+            <View style={styles.remainingRow}>
+              <Ionicons name="hourglass-outline" size={14} color="#1D4ED8" />
+              <Text style={styles.remainingText}>{timeRemainingLabel}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.bottomRow}>
             <View style={styles.metaPill}>
@@ -268,6 +304,29 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.mutedText
+  },
+  todayBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#DBEAFE'
+  },
+  todayBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1D4ED8',
+    letterSpacing: 0.4
+  },
+  remainingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10
+  },
+  remainingText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1D4ED8'
   },
   bottomRow: {
     flexDirection: 'row',

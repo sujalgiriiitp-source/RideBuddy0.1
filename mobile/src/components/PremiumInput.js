@@ -13,11 +13,13 @@ const PremiumInput = ({
   keyboardType = 'default',
   error,
   icon,
+  showPasswordToggle = false,
   style,
   inputStyle,
   ...rest
 }) => {
   const [focused, setFocused] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
   const lift = useRef(new Animated.Value(value ? 1 : 0)).current;
   const focusAnim = useRef(new Animated.Value(0)).current;
@@ -107,12 +109,26 @@ const PremiumInput = ({
             onChangeText={onChangeText}
             placeholder={focused ? placeholder : ''}
             placeholderTextColor={colors.lightText}
-            secureTextEntry={secureTextEntry}
+            secureTextEntry={secureTextEntry && !passwordVisible}
             keyboardType={keyboardType}
             onFocus={() => animate(true)}
             onBlur={() => animate(false)}
             {...rest}
           />
+          {showPasswordToggle && secureTextEntry ? (
+            <Pressable
+              style={styles.toggleButton}
+              onPress={() => setPasswordVisible((previous) => !previous)}
+              accessibilityRole="button"
+              accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+            >
+              <Ionicons
+                name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={18}
+                color={colors.textTertiary}
+              />
+            </Pressable>
+          ) : null}
         </View>
       </Animated.View>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
@@ -157,6 +173,13 @@ const styles = StyleSheet.create({
     marginRight: tokens.spacing.md,
     width: 24,
     height: 24
+  },
+  toggleButton: {
+    marginLeft: tokens.spacing.sm,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   input: {
     flex: 1,

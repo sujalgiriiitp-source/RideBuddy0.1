@@ -104,6 +104,18 @@ const RideDetailsScreen = ({ route, navigation }) => {
   }, [ride?.createdBy]);
 
   const driverBadge = getRatingBadge(driverRatingSummary?.averageRating, driverRatingSummary?.totalRideCount);
+  const driverVehicleType = String(ride?.createdBy?.vehicleType || '').trim();
+  const driverVehicleBrand = String(ride?.createdBy?.vehicleBrand || '').trim();
+  const driverVehicleModel = String(ride?.createdBy?.vehicleModel || '').trim();
+  const driverVehicleColor = String(ride?.createdBy?.vehicleColor || '').trim();
+  const driverNumberPlate = String(ride?.createdBy?.numberPlate || '').trim();
+  const hasVehicleDetails = Boolean(
+    driverVehicleType ||
+      driverVehicleBrand ||
+      driverVehicleModel ||
+      driverVehicleColor ||
+      driverNumberPlate
+  );
 
   const joinRide = async (availableSeats) => {
     try {
@@ -346,15 +358,19 @@ const RideDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.driverBadgeText}>{driverBadge.label}</Text>
                   </View>
                 </View>
-                <View style={styles.vehicleCard}>
-                  <Text style={styles.vehicleCardTitle}>Vehicle Details</Text>
-                  <Text style={styles.vehicleLine}>
-                    Vehicle: {ride?.createdBy?.vehicleBrand || 'N/A'} {ride?.createdBy?.vehicleModel || ''}
-                    {ride?.createdBy?.vehicleColor ? ` (${ride.createdBy.vehicleColor})` : ''}
-                  </Text>
-                  <Text style={styles.vehicleLine}>Number: {ride?.createdBy?.numberPlate || 'N/A'}</Text>
-                  <Text style={styles.vehicleLine}>Type: {ride?.createdBy?.vehicleType || 'N/A'}</Text>
-                </View>
+                {hasVehicleDetails ? (
+                  <View style={styles.vehicleCard}>
+                    <Text style={styles.vehicleCardTitle}>Vehicle Details</Text>
+                    {driverVehicleBrand || driverVehicleModel || driverVehicleColor ? (
+                      <Text style={styles.vehicleLine}>
+                        Vehicle: {[driverVehicleBrand, driverVehicleModel].filter(Boolean).join(' ')}
+                        {driverVehicleColor ? ` (${driverVehicleColor})` : ''}
+                      </Text>
+                    ) : null}
+                    {driverNumberPlate ? <Text style={styles.vehicleLine}>Number: {driverNumberPlate}</Text> : null}
+                    {driverVehicleType ? <Text style={styles.vehicleLine}>Type: {driverVehicleType}</Text> : null}
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>

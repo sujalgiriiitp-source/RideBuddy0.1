@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
@@ -13,6 +14,8 @@ import { ProgressBar, RideCardSkeleton, SuccessAnimation } from '../components';
 import AnimatedReveal from '../components/AnimatedReveal';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import { SUBSCRIPTION_TIERS } from '../constants/subscriptionTiers';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import {
@@ -23,8 +26,10 @@ import {
 } from '../utils/dateTime';
 
 const CreateRideScreen = () => {
+  const router = useRouter();
   const { addInAppNotification } = useNotifications();
   const { refreshProfile } = useAuth();
+  const { tier, canCreateRide, getRidesRemaining, dailyRideCount, maxDailyRides, fetchSubscriptionStatus } = useSubscription();
   const [form, setForm] = useState({ source: '', destination: '', dateTime: '', price: '', seatsAvailable: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -199,6 +204,21 @@ const CreateRideScreen = () => {
   };
 
   const handleCreate = async () => {
+    if (!canCreateRide()) {
+      Alert.alert(
+        'Daily Ride Limit Reached',
+        `You've reached your daily limit of ${maxDailyRides} rides. Upgrade to Premium for unlimited rides!`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade',
+            onPress: () => router.push('/main/subscription')
+          }
+        ]
+      );
+      return;
+    }
+
     const source = form.source.trim();
     const destination = form.destination.trim();
     const dateTime = form.dateTime.trim();
@@ -244,6 +264,8 @@ const CreateRideScreen = () => {
         }
       });
 
+      await fetchSubscriptionStatus();
+
       addInAppNotification({
         type: 'ride_created',
         title: 'Ride Created',
@@ -273,6 +295,26 @@ const CreateRideScreen = () => {
 
   return (
     <ScreenContainer contentContainerStyle={styles.screenContent}>
+      {tier === SUBSCRIPTION_TIERS.FREE && (
+        <AnimatedReveal>
+          <TouchableOpacity 
+            style={styles.limitBanner}
+            onPress={() => router.push('/main/subscription')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.limitBannerContent}>
+              <Ionicons name="information-circle" size={20} color="#F59E0B" />
+              <Text style={styles.limitBannerText}>
+                {getRidesRemaining()} of {maxDailyRides} rides remaining today
+              </Text>
+            </View>
+            <View style={styles.upgradeLinkRow}>
+              <Text style={styles.upgradeLink}>Upgrade to Premium</Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+            </View>
+          </TouchableOpacity>
+        </AnimatedReveal>
+      )}
       <AnimatedReveal>
         <View style={styles.card}>
           <LinearGradient colors={['rgba(37,99,235,0.14)', 'rgba(124,58,237,0.1)']} style={styles.cardGlow} />
@@ -466,6 +508,36 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontSize: 13,
     fontWeight: '700'
+  },
+  limitBanner: {
+    marginBottom: 16,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FDE68A'
+  },
+  limitBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8
+  },
+  limitBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E'
+  },
+  upgradeLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  upgradeLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary
   }
 });
 

@@ -85,7 +85,7 @@ const SignupScreen = ({ navigation }) => {
           </LinearGradient>
           <View>
             <Text style={styles.brandTitle}>RideBuddy</Text>
-            <Text style={styles.brandSub}>Create your rider account</Text>
+            <Text style={styles.brandSub}>Share rides, save money</Text>
           </View>
         </View>
 
@@ -119,6 +119,7 @@ const SignupScreen = ({ navigation }) => {
             onChangeText={(value) => setField('password', value)}
             placeholder="Minimum 6 characters"
             secureTextEntry
+            showPasswordToggle
             icon="lock-closed-outline"
             error={errors.password}
           />

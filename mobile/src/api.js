@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_URL } from './config';
+import { beginApiRequest, endApiRequest, setApiOffline } from './utils/apiActivity';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -64,6 +65,9 @@ const buildRequestError = ({
 };
 
 export const apiRequest = async (path, options = {}) => {
+  beginApiRequest();
+
+  try {
   const {
     method = 'GET',
     body,
@@ -135,6 +139,7 @@ export const apiRequest = async (path, options = {}) => {
       const hasHttpFailure = !response.ok;
 
       if (!hasHttpFailure && !hasAppFailure) {
+        setApiOffline(false);
         clearTimeout(timeoutId);
         return payload;
       }
@@ -194,6 +199,10 @@ export const apiRequest = async (path, options = {}) => {
           ? 'Unable to reach the server. Please check your internet connection and retry.'
           : error?.message || 'Unexpected request error. Please try again.';
 
+      if (networkError) {
+        setApiOffline(true);
+      }
+
       throw buildRequestError({
         message: friendlyMessage,
         code: timedOut ? 'TIMEOUT' : networkError ? 'NETWORK' : 'UNKNOWN',
@@ -217,6 +226,9 @@ export const apiRequest = async (path, options = {}) => {
     canRetry: true,
     retry: () => apiRequest(path, options)
   });
+  } finally {
+    endApiRequest();
+  }
 };
 
 export const apiBaseUrl = API_BASE_URL;

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image, Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Modal, Platform, Pressable, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
 import ScreenContainer from '../components/ScreenContainer';
 import CustomButton from '../components/CustomButton';
 import InputField from '../components/InputField';
@@ -12,6 +13,8 @@ import AnimatedReveal from '../components/AnimatedReveal';
 import { AnimatedEmptyState, RideCardSkeleton } from '../components';
 import RatingModal from '../components/RatingModal';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import { SUBSCRIPTION_TIERS } from '../constants/subscriptionTiers';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 import { apiRequest } from '../api';
@@ -41,8 +44,24 @@ const hasVehicleFields = (profile) => {
   );
 };
 
+const getInitials = (name) => {
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (!parts.length) {
+    return 'RB';
+  }
+
+  return parts.map((part) => part.charAt(0).toUpperCase()).join('');
+};
+
 const ProfileScreen = ({ route }) => {
+  const router = useRouter();
   const { user, refreshProfile, logout } = useAuth();
+  const { tier, features, dailyRideCount, maxDailyRides } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(route?.params?.tab === 'bookings' ? 'bookings' : 'profile');
   const [bookings, setBookings] = useState([]);
@@ -519,7 +538,7 @@ const ProfileScreen = ({ route }) => {
                   <Image source={{ uri: user.profilePhoto }} style={styles.avatarPhoto} />
                 ) : (
                   <View style={styles.avatarCircle}>
-                    <Ionicons name="person" size={30} color="#0A84FF" />
+                    <Text style={styles.avatarInitials}>{getInitials(user?.name)}</Text>
                   </View>
                 )}
                 <View style={styles.identityTextWrap}>
@@ -583,6 +602,40 @@ const ProfileScreen = ({ route }) => {
                 <Text style={styles.ratingMetaText}>{ratingSummary.totalReviews || 0} reviews received</Text>
               </View>
 
+              <TouchableOpacity 
+                style={styles.subscriptionCard} 
+                onPress={() => router.push('/main/subscription')}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={features?.gradient || ['#6B7280', '#4B5563']}
+                  style={styles.subscriptionGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.subscriptionHeader}>
+                    <Text style={styles.subscriptionLabel}>Current Plan</Text>
+                    {tier !== SUBSCRIPTION_TIERS.FREE && (
+                      <Text style={styles.subscriptionBadge}>{features?.badge}</Text>
+                    )}
+                  </View>
+                  <Text style={styles.subscriptionTier}>{features?.name || 'Free'}</Text>
+                  {maxDailyRides === -1 ? (
+                    <Text style={styles.subscriptionInfo}>Unlimited rides</Text>
+                  ) : (
+                    <Text style={styles.subscriptionInfo}>
+                      {dailyRideCount}/{maxDailyRides} rides today
+                    </Text>
+                  )}
+                  {tier === SUBSCRIPTION_TIERS.FREE && (
+                    <View style={styles.upgradePrompt}>
+                      <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                      <Text style={styles.upgradeText}>Upgrade to Premium</Text>
+                    </View>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
               <Text style={styles.reviewsHeading}>Recent Reviews</Text>
               {ratingSummary.ratings?.length ? (
                 ratingSummary.ratings.slice(0, 5).map((rating) => (
@@ -603,7 +656,7 @@ const ProfileScreen = ({ route }) => {
           </AnimatedReveal>
 
           <AnimatedReveal delay={120}>
-            <CustomButton title="Edit Profile" onPress={openEditModal} icon="create-outline" />
+            <CustomButton title="✏️ Edit Profile" onPress={openEditModal} icon="create-outline" style={styles.editProfileButton} />
           </AnimatedReveal>
           <AnimatedReveal delay={140}>
             <CustomButton title="Refresh Profile" onPress={handleRefresh} loading={loading} variant="secondary" icon="refresh-outline" />
@@ -854,6 +907,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12
   },
+  avatarInitials: {
+    color: '#1D4ED8',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 0.5
+  },
   avatarPhoto: {
     width: 64,
     height: 64,
@@ -936,6 +995,13 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 10
+  },
+  editProfileButton: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: tokens.radius.lg,
+    ...tokens.shadows.lg
   },
   sectionTitle: {
     fontSize: tokens.typography.h3,
@@ -1162,6 +1228,60 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     fontSize: 12,
     fontWeight: '600'
+  },
+  subscriptionCard: {
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6
+  },
+  subscriptionGradient: {
+    padding: 16
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
+  subscriptionLabel: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  subscriptionBadge: {
+    fontSize: 24
+  },
+  subscriptionTier: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4
+  },
+  subscriptionInfo: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  upgradePrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.3)'
+  },
+  upgradeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700'
   }
 });
 

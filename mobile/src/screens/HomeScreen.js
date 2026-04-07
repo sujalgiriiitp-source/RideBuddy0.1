@@ -3,6 +3,7 @@ import { Animated, FlatList, Pressable, StyleSheet, Text, TextInput, View, Platf
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
 import { apiRequest } from '../api';
@@ -11,6 +12,7 @@ import RideCard from '../components/RideCard';
 import { RideCardSkeleton, AnimatedEmptyState, StaggeredItem } from '../components';
 import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
+import { MIN_RIDE_YEAR } from '../utils/dateTime';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
@@ -23,6 +25,7 @@ const HomeScreen = ({ navigation }) => {
   const [fabPressed, setFabPressed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDate, setFilterDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('time');
@@ -94,6 +97,9 @@ const HomeScreen = ({ navigation }) => {
     const nextRides = rides.filter((ride) => {
       const source = String(ride?.source || ride?.from || '').toLowerCase();
       const destination = String(ride?.destination || ride?.to || '').toLowerCase();
+      const parsedRideDate = new Date(ride?.dateTime || ride?.date || '');
+      const isValidRideDate = Number.isFinite(parsedRideDate.getTime());
+      const isFutureRide = isValidRideDate && parsedRideDate.getFullYear() >= MIN_RIDE_YEAR && parsedRideDate.getTime() >= Date.now();
       const rideDate = normalizeDateString(ride?.dateTime || ride?.date);
       const ridePrice = Number(ride?.price ?? 0);
 
@@ -108,7 +114,7 @@ const HomeScreen = ({ navigation }) => {
       const matchesMaxPrice =
         parsedMaxPrice === null || (Number.isFinite(parsedMaxPrice) && ridePrice <= parsedMaxPrice);
 
-      return matchesQuery && matchesDate && matchesMinPrice && matchesMaxPrice;
+      return isFutureRide && matchesQuery && matchesDate && matchesMinPrice && matchesMaxPrice;
     });
 
     const sortedRides = [...nextRides];
@@ -130,6 +136,21 @@ const HomeScreen = ({ navigation }) => {
 
     return sortedRides;
   }, [rides, searchQuery, filterDate, minPrice, maxPrice, sortBy]);
+
+  const handleFilterDateChange = useCallback((_, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (!selectedDate) {
+      return;
+    }
+
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    setFilterDate(`${year}-${month}-${day}`);
+  }, []);
 
   const fetchRides = useCallback(async () => {
     if (__DEV__) {
@@ -270,14 +291,32 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.filtersGrid}>
           <View style={[styles.filterInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
             <Ionicons name="calendar-outline" size={16} color="#8C98A8" />
-            <TextInput
-              placeholder="Date (YYYY-MM-DD)"
-              placeholderTextColor="#9AA4B2"
-              value={filterDate}
-              onChangeText={setFilterDate}
-              style={[styles.filterInput, { color: theme.text }]}
-            />
+            <Pressable style={styles.datePressArea} onPress={() => setShowDatePicker(true)}>
+              <Text style={[styles.filterInput, { color: filterDate ? theme.text : '#9AA4B2' }]}>
+                {filterDate || 'Select date'}
+              </Text>
+            </Pressable>
+            {filterDate ? (
+              <Pressable onPress={() => setFilterDate('')}>
+                <Ionicons name="close-circle" size={16} color="#94A3B8" />
+              </Pressable>
+            ) : null}
           </View>
+
+          {showDatePicker ? (
+            <DateTimePicker
+              value={filterDate ? new Date(`${filterDate}T00:00:00`) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleFilterDateChange}
+            />
+          ) : null}
+
+          {Platform.OS === 'ios' && showDatePicker ? (
+            <Pressable style={styles.dateDoneBtn} onPress={() => setShowDatePicker(false)}>
+              <Text style={styles.dateDoneText}>Done</Text>
+            </Pressable>
+          ) : null}
 
           <View style={styles.priceRow}>
             <View style={[styles.filterInputWrap, styles.priceInputWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
@@ -362,11 +401,11 @@ const HomeScreen = ({ navigation }) => {
   const renderEmpty = useCallback(() => (
     <AnimatedEmptyState
       icon="car-outline"
-      title={rides.length === 0 ? 'No rides available' : 'No matching rides'}
+      title={rides.length === 0 ? 'No rides available' : 'No rides found'}
       message={
         rides.length === 0
           ? 'Pull to refresh or create a new ride to get started.'
-          : 'Try changing search text, date, or price filters.'
+          : 'Try updating your search, calendar date, or price filters.'
       }
       actionText="Create Ride"
       onActionPress={goToCreateRide}
@@ -557,6 +596,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '500'
+  },
+  datePressArea: {
+    flex: 1,
+    justifyContent: 'center'
+  },
+  dateDoneBtn: {
+    alignSelf: 'flex-end',
+    marginTop: -4
+  },
+  dateDoneText: {
+    color: '#1D4ED8',
+    fontWeight: '700',
+    fontSize: 13
   },
   priceRow: {
     flexDirection: 'row',

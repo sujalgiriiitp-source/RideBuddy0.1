@@ -7,6 +7,7 @@ const routes = require('./routes');
 const bookingRoutes = require('./routes/bookings');
 const conversationRoutes = require('./routes/conversationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const logger = require('./config/logger');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const notFound = require('./middleware/notFound');
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);

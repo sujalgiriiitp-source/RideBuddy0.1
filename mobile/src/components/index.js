@@ -26,6 +26,7 @@ export { default as DistanceTimeDisplay } from './DistanceTimeDisplay';
 export { default as PremiumCard } from './PremiumCard';
 export { default as PremiumButton } from './PremiumButton';
 export { default as PremiumInput } from './PremiumInput';
+export { default as SubscriptionPlanCard } from './SubscriptionPlanCard';
 export { default as Badge } from './Badge';
 export { default as CustomButton } from './CustomButton';
 export { default as InputField } from './InputField';

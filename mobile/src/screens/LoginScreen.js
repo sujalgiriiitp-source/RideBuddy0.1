@@ -47,7 +47,15 @@ const LoginScreen = ({ navigation }) => {
       await login(email.trim(), password);
       Toast.show({ type: 'success', text1: 'Welcome back!' });
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Login failed', text2: error.message });
+      const message = String(error?.message || 'Unable to login right now.');
+      const isWrongCredentials = /invalid|incorrect|credential|password|unauthorized|401/i.test(message);
+      Toast.show({
+        type: 'error',
+        text1: isWrongCredentials ? 'Wrong email or password' : 'Login failed',
+        text2: isWrongCredentials
+          ? 'Please check your password and try again.'
+          : message
+      });
     } finally {
       setLoading(false);
     }
@@ -62,7 +70,7 @@ const LoginScreen = ({ navigation }) => {
           </LinearGradient>
           <View>
             <Text style={styles.title}>RideBuddy</Text>
-            <Text style={styles.subtitle}>Welcome back. Find your next ride in seconds.</Text>
+            <Text style={styles.subtitle}>Share rides, save money</Text>
           </View>
         </View>
 
@@ -92,6 +100,7 @@ const LoginScreen = ({ navigation }) => {
             }}
             placeholder="Enter password"
             secureTextEntry
+            showPasswordToggle
             icon="lock-closed-outline"
             error={errors.password}
           />

@@ -74,6 +74,12 @@ const createRide = async ({ userId, pickup, drop, source, destination, dateTime,
     passengers: []
   });
 
+  const populatedRide = await Ride.findById(ride._id)
+    .populate('createdBy', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
+    .populate('user', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
+    .populate('driver', 'name email phone role profilePhoto vehicleType vehicleBrand vehicleModel vehicleColor numberPlate')
+    .populate('passengers', 'name email');
+
   emitRideEvent(ride._id, 'ride:status:update', {
     rideId: ride._id,
     status: ride.status,
@@ -88,7 +94,7 @@ const createRide = async ({ userId, pickup, drop, source, destination, dateTime,
     console.error('Notification error:', err);
   });
 
-  return ride;
+  return populatedRide;
 };
 
 const getRides = async ({ source, destination, date }) => {
