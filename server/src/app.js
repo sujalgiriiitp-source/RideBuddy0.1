@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { StatusCodes } = require('http-status-codes');
 const routes = require('./routes');
+const bookingRoutes = require('./routes/bookings');
 const logger = require('./config/logger');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const notFound = require('./middleware/notFound');
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.use('/api/bookings', bookingRoutes);
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);

@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { Server } = require('socket.io');
 const routes = require('./src/routes');
+const bookingRoutes = require('./src/routes/bookings');
 const logger = require('./src/config/logger');
 const { setSocketServer } = require('./src/config/socket');
 const setupRideTrackingSocket = require('./src/socket/rideTrackingSocket');
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true });
 });
 
+app.use('/api/bookings', bookingRoutes);
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);
