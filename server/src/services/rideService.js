@@ -3,6 +3,7 @@ const Ride = require('../models/Ride');
 const Booking = require('../models/Booking');
 const Driver = require('../models/Driver');
 const User = require('../models/User');
+const Rating = require('../models/Rating');
 const ApiError = require('../utils/ApiError');
 const { getSocketServer } = require('../config/socket');
 const NotificationEventService = require('./notificationEventService');
@@ -136,7 +137,44 @@ const getRideById = async (rideId) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
   }
 
-  return ride;
+  const rideData = ride.toObject();
+
+  const enrichDriverStats = async (person) => {
+    if (!person || !person._id) {
+      return person;
+    }
+
+    const [summary, totalRides] = await Promise.all([
+      Rating.aggregate([
+        { $match: { ratedUserId: person._id } },
+        {
+          $group: {
+            _id: '$ratedUserId',
+            averageRating: { $avg: '$stars' }
+          }
+        }
+      ]),
+      Ride.countDocuments({ createdBy: person._id })
+    ]);
+
+    const averageRating = summary.length > 0 ? Number(summary[0].averageRating.toFixed(1)) : 0;
+
+    const plainPerson = person.toObject ? person.toObject() : person;
+
+    return {
+      ...plainPerson,
+      averageRating,
+      totalRides
+    };
+  };
+
+  rideData.createdBy = await enrichDriverStats(rideData.createdBy);
+  rideData.user = await enrichDriverStats(rideData.user);
+  if (rideData.driver) {
+    rideData.driver = await enrichDriverStats(rideData.driver);
+  }
+
+  return rideData;
 };
 
 const acceptRide = async ({ rideId, driverUserId }) => {

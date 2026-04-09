@@ -22,6 +22,15 @@ const updateVehicle = asyncHandler(async (req, res) => {
   return sendResponse(res, StatusCodes.OK, true, 'Vehicle details updated successfully', profile);
 });
 
+const updateProfile = asyncHandler(async (req, res) => {
+  const profile = await userService.updateProfile({
+    userId: req.user._id,
+    ...req.body
+  });
+
+  return sendResponse(res, StatusCodes.OK, true, 'Profile updated successfully', profile);
+});
+
 const uploadPhoto = asyncHandler(async (req, res) => {
   const result = await userService.updateProfilePhoto({
     userId: req.user._id,
@@ -35,5 +44,6 @@ module.exports = {
   getProfile,
   getUserProfile,
   updateVehicle,
-  uploadPhoto
+  uploadPhoto,
+  updateProfile
 };

@@ -59,6 +59,25 @@ const updateProfilePhoto = async ({ userId, profilePhoto }) => {
   };
 };
 
+const updateProfile = async ({ userId, name, phone, profilePhoto }) => {
+  const user = await ensureUserExists(userId);
+
+  if (name !== undefined) {
+    user.name = String(name || '').trim();
+  }
+
+  if (phone !== undefined) {
+    user.phone = String(phone || '').trim();
+  }
+
+  if (profilePhoto !== undefined) {
+    user.profilePhoto = String(profilePhoto || '').trim();
+  }
+
+  await user.save();
+  return User.findById(userId).select('-password');
+};
+
 const getUserProfileById = async (userId) => {
   const profile = await User.findById(userId).select(
     'name email phone role vehicleType vehicleBrand vehicleModel vehicleColor numberPlate profilePhoto createdAt'
@@ -75,5 +94,6 @@ module.exports = {
   getProfile,
   updateVehicleDetails,
   updateProfilePhoto,
-  getUserProfileById
+  getUserProfileById,
+  updateProfile
 };

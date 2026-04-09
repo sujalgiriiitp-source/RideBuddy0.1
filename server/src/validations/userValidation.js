@@ -31,8 +31,22 @@ const uploadPhotoSchema = Joi.object({
   })
 });
 
+const updateProfileSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(100).optional(),
+  phone: Joi.string().trim().min(8).max(20).optional(),
+  profilePhoto: Joi.string().trim().max(2_000_000).optional().custom((value, helpers) => {
+    if (!imageDataRegex.test(value) && !imageUrlRegex.test(value)) {
+      return helpers.error('any.invalid');
+    }
+    return value;
+  }).messages({
+    'any.invalid': 'Profile photo must be a valid image URL or base64 image data URI'
+  })
+}).min(1);
+
 module.exports = {
   updateVehicleSchema,
   userProfileParamsSchema,
-  uploadPhotoSchema
+  uploadPhotoSchema,
+  updateProfileSchema
 };

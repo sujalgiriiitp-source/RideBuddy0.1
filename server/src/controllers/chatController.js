@@ -15,12 +15,13 @@ const buildOtherParticipant = (participants, userId) => {
 const startConversation = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { rideId, driverId } = req.body;
+    const { rideId, driverId, receiverId } = req.body;
+    const targetUserId = receiverId || driverId;
 
-    if (!rideId || !driverId) {
+    if (!rideId || !targetUserId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'rideId and driverId are required'
+        message: 'rideId and receiverId are required'
       });
     }
 
@@ -32,14 +33,14 @@ const startConversation = async (req, res) => {
       });
     }
 
-    if (asObjectIdString(userId) === asObjectIdString(driverId)) {
+    if (asObjectIdString(userId) === asObjectIdString(targetUserId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'You cannot start chat with yourself'
       });
     }
 
-    if (asObjectIdString(ride.createdBy?._id || ride.createdBy) !== asObjectIdString(driverId)) {
+    if (asObjectIdString(ride.createdBy?._id || ride.createdBy) !== asObjectIdString(targetUserId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'Provided driver does not match this ride'
@@ -48,7 +49,7 @@ const startConversation = async (req, res) => {
 
     let conversation = await Conversation.findOne({
       rideId,
-      participants: { $all: [userId, driverId] },
+      participants: { $all: [userId, targetUserId] },
       $expr: { $eq: [{ $size: '$participants' }, 2] }
     })
       .populate('participants', 'name email')
@@ -57,7 +58,7 @@ const startConversation = async (req, res) => {
     if (!conversation) {
       conversation = await Conversation.create({
         rideId,
-        participants: [userId, driverId],
+        participants: [userId, targetUserId],
         lastMessage: {
           text: '',
           senderId: userId,
@@ -153,7 +154,7 @@ const getUserConversations = async (req, res) => {
     })
       .populate('participants', 'name email')
       .populate('rideId', 'source destination dateTime')
-      .sort({ 'lastMessage.timestamp': -1 })
+      .sort({ updatedAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .lean();

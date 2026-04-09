@@ -22,6 +22,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+    req.userId = decoded.userId || decoded.id || decoded._id || user._id;
     return next();
   } catch (_error) {
     return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid or expired token'));
