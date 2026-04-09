@@ -170,9 +170,7 @@ const getRideById = async (rideId) => {
 
   rideData.createdBy = await enrichDriverStats(rideData.createdBy);
   rideData.user = await enrichDriverStats(rideData.user);
-  if (rideData.driver) {
-    rideData.driver = await enrichDriverStats(rideData.driver);
-  }
+  rideData.driver = await enrichDriverStats(rideData.driver || rideData.createdBy);
 
   return rideData;
 };
