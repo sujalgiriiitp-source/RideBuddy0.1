@@ -31,7 +31,7 @@ class RideMatchingService {
       status: 'pending',
       seatsAvailable: { $gt: 0 },
       dateTime: { $gte: startTime, $lte: endTime },
-      createdBy: { $ne: intent.user } // Exclude user's own rides
+      createdBy: { $ne: intent.userId || intent.user } // Exclude user's own rides
     };
 
     // If coordinates available, use proximity search

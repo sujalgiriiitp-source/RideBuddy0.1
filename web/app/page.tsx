@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const mockRides = [
@@ -12,15 +12,47 @@ const mockRides = [
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadUnread = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch('https://ridebuddy0-1.onrender.com/api/notifications', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const payload = await response.json().catch(() => null);
+      if (response.ok && payload?.success) {
+        setUnreadCount(Array.isArray(payload.data) ? payload.data.length : 0);
+      }
+    };
+
+    loadUnread().catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen pb-20">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary via-primary-dark to-primary-light p-8 md:p-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Good Morning, Sujal 👋
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Good Morning, Sujal 👋
+            </h1>
+            <Link href="/notifications" className="relative text-white text-2xl">
+              🔔
+              {unreadCount > 0 ? (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              ) : null}
+            </Link>
+          </div>
           <h2 className="text-2xl md:text-3xl text-white/90 mb-2">
             Where are you going today?
           </h2>

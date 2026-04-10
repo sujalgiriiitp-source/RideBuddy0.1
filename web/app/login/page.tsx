@@ -124,7 +124,7 @@ export default function LoginPage() {
 
             <div className="text-center mt-8">
               <p className="text-gray-text mb-4">
-                Don't have an account?
+                Don&apos;t have an account?
               </p>
               <Link href="/signup" className="btn-secondary inline-block px-8 py-2">
                 Create Account

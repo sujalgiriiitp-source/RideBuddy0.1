@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const travelIntentSchema = new mongoose.Schema(
   {
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
@@ -28,6 +28,39 @@ const travelIntentSchema = new mongoose.Schema(
     dateTime: {
       type: Date,
       required: true
+    },
+    status: {
+      type: String,
+      enum: ['open', 'matched', 'expired'],
+      default: 'open'
+    },
+    responses: [
+      {
+        driverId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true
+        },
+        status: {
+          type: String,
+          enum: ['pending', 'accepted', 'declined'],
+          default: 'pending'
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
+    matchedDriverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    conversationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Conversation',
+      default: null
     }
   },
   {
@@ -37,5 +70,17 @@ const travelIntentSchema = new mongoose.Schema(
 
 travelIntentSchema.index({ sourceCoordinates: '2dsphere' });
 travelIntentSchema.index({ destinationCoordinates: '2dsphere' });
+travelIntentSchema.index({ userId: 1, createdAt: -1 });
+travelIntentSchema.index({ status: 1, dateTime: 1 });
+
+travelIntentSchema.virtual('user', {
+  ref: 'User',
+  localField: 'userId',
+  foreignField: '_id',
+  justOne: true
+});
+
+travelIntentSchema.set('toJSON', { virtuals: true });
+travelIntentSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('TravelIntent', travelIntentSchema);

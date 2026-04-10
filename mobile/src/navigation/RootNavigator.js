@@ -98,6 +98,13 @@ const MainTabs = ({ navigation }) => {
         notification={notification}
         onPress={(notif) => {
           const data = notif.request.content.data;
+          if (data.conversationId) {
+            navigation.navigate('ChatScreen', {
+              conversationId: data.conversationId,
+              rideName: 'Intent Match'
+            });
+            return;
+          }
           if (data.rideId) {
             navigation.navigate('Ride Details', { rideId: data.rideId });
           }

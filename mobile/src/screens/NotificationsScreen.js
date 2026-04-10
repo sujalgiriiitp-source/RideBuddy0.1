@@ -32,7 +32,15 @@ const NotificationsScreen = ({ navigation }) => {
   } = useNotifications();
 
   const handleNotificationPress = (item) => {
-    markNotificationAsRead(item.id);
+    markNotificationAsRead(item.id || item._id);
+
+    if (item.conversationId) {
+      navigation?.navigate?.('ChatScreen', {
+        conversationId: item.conversationId,
+        rideName: 'Intent Match'
+      });
+      return;
+    }
 
     if (item.rideId) {
       navigation?.navigate?.('Ride Details', { rideId: item.rideId });

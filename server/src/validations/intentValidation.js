@@ -12,14 +12,24 @@ const intentQuerySchema = Joi.object({
   date: Joi.date().iso().optional()
 });
 
-const matchQuerySchema = Joi.object({
+const nearbyIntentQuerySchema = Joi.object({
   source: Joi.string().trim().optional(),
   destination: Joi.string().trim().optional(),
-  dateTime: Joi.date().iso().optional()
+  lookAheadHours: Joi.number().integer().min(1).max(168).optional()
+});
+
+const respondIntentSchema = Joi.object({
+  action: Joi.string().trim().valid('accept', 'decline').required()
+});
+
+const intentIdParamsSchema = Joi.object({
+  id: Joi.string().hex().length(24).required()
 });
 
 module.exports = {
   createIntentSchema,
   intentQuerySchema,
-  matchQuerySchema
+  nearbyIntentQuerySchema,
+  respondIntentSchema,
+  intentIdParamsSchema
 };

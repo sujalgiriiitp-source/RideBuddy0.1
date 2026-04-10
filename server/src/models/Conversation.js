@@ -5,7 +5,12 @@ const conversationSchema = new mongoose.Schema(
     rideId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Ride',
-      required: true
+      default: null
+    },
+    intentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TravelIntent',
+      default: null
     },
     participants: [
       {
@@ -41,6 +46,7 @@ const conversationSchema = new mongoose.Schema(
 
 // Indexes for efficient queries
 conversationSchema.index({ rideId: 1 });
+conversationSchema.index({ intentId: 1 });
 conversationSchema.index({ participants: 1 });
 conversationSchema.index({ 'lastMessage.timestamp': -1 });
 conversationSchema.index({ updatedAt: -1 });

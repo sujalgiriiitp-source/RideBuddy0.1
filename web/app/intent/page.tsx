@@ -1,17 +1,205 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
-const mockIntents = [
-  { id: 1, user: 'Rahul Kumar', from: 'Allahabad', to: 'Varanasi', when: 'Tomorrow 9 AM' },
-  { id: 2, user: 'Priya Singh', from: 'Lucknow', to: 'Kanpur', when: 'Today 3 PM' },
-];
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://ridebuddy0-1.onrender.com/api').replace(/\/+$/, '');
+
+type IntentResponse = {
+  driverId?: {
+    _id?: string;
+    name?: string;
+    vehicleBrand?: string;
+    vehicleModel?: string;
+    numberPlate?: string;
+  };
+  status?: 'pending' | 'accepted' | 'declined';
+};
+
+type IntentItem = {
+  _id: string;
+  source: string;
+  destination: string;
+  dateTime: string;
+  status?: 'open' | 'matched' | 'expired';
+  userId?: { _id?: string; name?: string };
+  responses?: IntentResponse[];
+  conversationId?: { _id?: string } | string | null;
+};
+
+type NotificationItem = {
+  _id: string;
+  type: 'INTENT_REQUEST' | 'RIDE_ACCEPTED';
+  body: string;
+  data?: { conversationId?: string };
+};
+
+const getToken = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return localStorage.getItem('token') || '';
+};
+
+const apiRequest = async (path: string, options: RequestInit = {}) => {
+  const token = getToken();
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {})
+    }
+  });
+  const payload = await response.json().catch(() => ({ success: false, message: 'Invalid server response' }));
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.message || 'Request failed');
+  }
+  return payload;
+};
+
+const formatDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Date not available';
+  }
+  return date.toLocaleString();
+};
+
+const formatRelative = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const diffHours = Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60));
+  if (diffHours <= 0) return 'starting soon';
+  if (diffHours === 1) return 'in 1 hour';
+  return `in ${diffHours} hours`;
+};
 
 export default function TravelIntentPage() {
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [source, setSource] = useState('');
+  const [destination, setDestination] = useState('');
   const [dateTime, setDateTime] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [publicIntents, setPublicIntents] = useState<IntentItem[]>([]);
+  const [myIntents, setMyIntents] = useState<IntentItem[]>([]);
+  const [busyId, setBusyId] = useState('');
+  const [skippedIntentIds, setSkippedIntentIds] = useState<string[]>([]);
+  const [banner, setBanner] = useState<NotificationItem | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const isLoggedIn = Boolean(getToken());
+
+  const loadData = useCallback(async () => {
+    if (!isLoggedIn) {
+      setLoading(false);
+      return;
+    }
+
+    const [nearby, mine, notifications] = await Promise.all([
+      apiRequest('/intents/nearby'),
+      apiRequest('/intents/my-intents'),
+      apiRequest('/notifications')
+    ]);
+
+    setPublicIntents((nearby.data || []).filter((item: IntentItem) => !skippedIntentIds.includes(item._id)));
+    setMyIntents(mine.data || []);
+    const accepted = (notifications.data || []).find((notification: NotificationItem) => notification.type === 'RIDE_ACCEPTED');
+    setBanner(accepted || null);
+  }, [isLoggedIn, skippedIntentIds]);
+
+  useEffect(() => {
+    loadData()
+      .catch((error) => setFeedback(error.message))
+      .finally(() => setLoading(false));
+  }, [loadData]);
+
+  const handlePostIntent = async () => {
+    if (!source.trim() || !destination.trim() || !dateTime) {
+      setFeedback('Please fill source, destination and date/time.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setFeedback('');
+      await apiRequest('/intents', {
+        method: 'POST',
+        body: JSON.stringify({
+          source: source.trim(),
+          destination: destination.trim(),
+          dateTime: new Date(dateTime).toISOString()
+        })
+      });
+      setSource('');
+      setDestination('');
+      setDateTime('');
+      setFeedback('Your request has been sent! Drivers nearby will be notified.');
+      await loadData();
+    } catch (error) {
+      setFeedback((error as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const respond = async (intentId: string, action: 'accept' | 'decline') => {
+    try {
+      setBusyId(intentId);
+      const response = await apiRequest(`/intents/${intentId}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ action })
+      });
+
+      if (action === 'decline') {
+        setSkippedIntentIds((prev) => [...prev, intentId]);
+      } else {
+        setFeedback("Request sent! You'll be connected via chat.");
+        if (response?.data?.conversationId) {
+          window.location.href = `/chat?conversationId=${response.data.conversationId}`;
+          return;
+        }
+      }
+      await loadData();
+    } catch (error) {
+      setFeedback((error as Error).message);
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const cancelIntent = async (intentId: string) => {
+    try {
+      setBusyId(intentId);
+      await apiRequest(`/intents/${intentId}`, { method: 'DELETE' });
+      await loadData();
+    } catch (error) {
+      setFeedback((error as Error).message);
+    } finally {
+      setBusyId('');
+    }
+  };
+
+  const openBannerChat = async () => {
+    if (!banner) return;
+    try {
+      await apiRequest(`/notifications/${banner._id}/read`, { method: 'PUT' });
+      setBanner(null);
+      if (banner?.data?.conversationId) {
+        window.location.href = `/chat?conversationId=${banner.data.conversationId}`;
+      } else {
+        window.location.href = '/chat';
+      }
+    } catch (error) {
+      setFeedback((error as Error).message);
+    }
+  };
+
+  const visiblePublicIntents = useMemo(
+    () => publicIntents.filter((intent) => !skippedIntentIds.includes(intent._id)),
+    [publicIntents, skippedIntentIds]
+  );
 
   return (
     <div className="min-h-screen pb-24">
@@ -20,101 +208,130 @@ export default function TravelIntentPage() {
           ← Back to home
         </Link>
 
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-4xl">🧭</span>
-          <h1 className="text-3xl font-bold">Travel Intent</h1>
-        </div>
-        <p className="text-gray-text mb-8">Let others know where you want to go</p>
+        <h1 className="text-3xl font-bold mb-2">Travel Intent</h1>
+        <p className="text-gray-text mb-6">Post intent and connect with nearby drivers automatically.</p>
 
-        {/* Create Intent Form */}
-        <div className="card mb-8">
-          <h3 className="text-xl font-bold mb-6">Create Your Intent</h3>
-          
-          <div className="space-y-6">
-            {/* From Location */}
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">📍</span>
-              <div className="flex-1">
-                <label className="text-sm text-gray-text block mb-2">From</label>
-                <input 
-                  type="text" 
-                  placeholder="Starting location"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="input-field" 
-                />
-              </div>
-            </div>
+        {banner ? (
+          <button className="card w-full mb-4 text-left border border-orange-300 bg-orange-50" onClick={openBannerChat}>
+            <div className="font-semibold text-orange-900">🎉 {banner.body}</div>
+            <div className="text-sm text-orange-700 mt-1">Open Chat →</div>
+          </button>
+        ) : null}
 
-            {/* To Location */}
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">🏁</span>
-              <div className="flex-1">
-                <label className="text-sm text-gray-text block mb-2">To</label>
-                <input 
-                  type="text" 
-                  placeholder="Destination"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="input-field" 
-                />
-              </div>
-            </div>
-
-            {/* Date & Time */}
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">📅</span>
-              <div className="flex-1">
-                <label className="text-sm text-gray-text block mb-2">When</label>
-                <input 
-                  type="datetime-local"
-                  value={dateTime}
-                  onChange={(e) => setDateTime(e.target.value)}
-                  className="input-field" 
-                />
-              </div>
-            </div>
-
-            <button className="btn-primary w-full">
-              Post Intent
-            </button>
+        {!isLoggedIn ? (
+          <div className="card mb-6">
+            <p className="text-gray-text">Please login first to post intents and offer rides.</p>
           </div>
-        </div>
+        ) : (
+          <div className="card mb-8">
+            <h3 className="text-xl font-bold mb-5">Post Intent</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="📍 Source"
+                value={source}
+                onChange={(event) => setSource(event.target.value)}
+                className="input-field"
+              />
+              <input
+                type="text"
+                placeholder="🏁 Destination"
+                value={destination}
+                onChange={(event) => setDestination(event.target.value)}
+                className="input-field"
+              />
+              <input
+                type="datetime-local"
+                value={dateTime}
+                onChange={(event) => setDateTime(event.target.value)}
+                className="input-field"
+              />
+              <button disabled={submitting || loading} className="btn-primary w-full" onClick={handlePostIntent}>
+                {submitting ? 'Posting...' : 'Post Intent'}
+              </button>
+            </div>
+          </div>
+        )}
 
-        {/* Public Intents */}
-        <h3 className="text-xl font-bold mb-4">Public Travel Intents</h3>
-        
-        <div className="space-y-4">
-          {mockIntents.map((intent) => (
-            <div key={intent.id} className="card hover:shadow-xl transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                  {intent.user.split(' ').map(n => n[0]).join('')}
+        {feedback ? <p className="mb-6 text-sm text-primary">{feedback}</p> : null}
+
+        <h3 className="text-xl font-bold mb-4">My Active Intents</h3>
+        {myIntents.length === 0 ? (
+          <div className="card mb-8 text-gray-text">No active intents yet.</div>
+        ) : (
+          <div className="space-y-4 mb-8">
+            {myIntents.map((intent) => {
+              const accepted = (intent.responses || []).find((response) => response.status === 'accepted');
+              const pendingCount = (intent.responses || []).filter((response) => response.status === 'pending').length;
+              const conversationId =
+                typeof intent.conversationId === 'string' ? intent.conversationId : intent.conversationId?._id;
+
+              if (accepted) {
+                return (
+                  <div key={intent._id} className="card">
+                    <div className="font-semibold text-lg">🗺️ {intent.source} → {intent.destination}</div>
+                    <div className="mt-2 text-green-700 font-semibold">✅ {accepted.driverId?.name || 'Driver'} accepted!</div>
+                    <div className="text-sm text-gray-text mt-1">
+                      {accepted.driverId?.vehicleBrand || 'Vehicle'} {accepted.driverId?.vehicleModel || ''}
+                      {accepted.driverId?.numberPlate ? ` • ${accepted.driverId.numberPlate}` : ''}
+                    </div>
+                    {conversationId ? (
+                      <a href={`/chat?conversationId=${conversationId}`} className="btn-secondary inline-block mt-4">
+                        💬 Open Chat
+                      </a>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={intent._id} className="card">
+                  <div className="font-semibold text-lg">🗺️ {intent.source} → {intent.destination}</div>
+                  <div className="text-sm text-gray-text mt-1">📅 {formatDate(intent.dateTime)}</div>
+                  <div className="mt-2 text-yellow-700 font-semibold">Status: 🟡 Waiting for driver</div>
+                  <div className="text-sm text-gray-text mt-2">[{pendingCount} drivers notified]</div>
+                  <button
+                    className="btn-secondary mt-4"
+                    disabled={busyId === intent._id}
+                    onClick={() => cancelIntent(intent._id)}
+                  >
+                    ❌ Cancel Intent
+                  </button>
                 </div>
-                
-                <div className="flex-1">
-                  <div className="font-bold mb-1">{intent.user}</div>
-                  <div className="text-lg font-semibold text-gray-900 mb-2">
-                    {intent.from} → {intent.to}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-text mb-3">
-                    <span>🕐</span>
-                    <span>{intent.when}</span>
-                  </div>
-                  <button className="btn-secondary">
-                    Match Ride
+              );
+            })}
+          </div>
+        )}
+
+        <h3 className="text-xl font-bold mb-4">Public Intents</h3>
+        {visiblePublicIntents.length === 0 ? (
+          <div className="card text-gray-text">No public intents right now.</div>
+        ) : (
+          <div className="space-y-4">
+            {visiblePublicIntents.map((intent) => (
+              <div key={intent._id} className="card">
+                <div className="font-semibold">👤 {intent.userId?.name || 'Passenger'}</div>
+                <div className="font-semibold text-lg mt-1">🗺️ {intent.source} → {intent.destination}</div>
+                <div className="text-sm text-gray-text mt-2">📅 {formatDate(intent.dateTime)}</div>
+                <div className="text-sm text-gray-text">⏱️ {formatRelative(intent.dateTime)}</div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    className="btn-primary flex-1"
+                    disabled={busyId === intent._id}
+                    onClick={() => respond(intent._id, 'accept')}
+                  >
+                    🚗 Offer Ride
+                  </button>
+                  <button
+                    className="btn-secondary flex-1"
+                    disabled={busyId === intent._id}
+                    onClick={() => respond(intent._id, 'decline')}
+                  >
+                    ❌ Skip
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {mockIntents.length === 0 && (
-          <div className="text-center py-12 card">
-            <div className="text-6xl mb-4">🧭</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No intents yet</h3>
-            <p className="text-gray-text">Be the first to post a travel intent!</p>
+            ))}
           </div>
         )}
       </div>

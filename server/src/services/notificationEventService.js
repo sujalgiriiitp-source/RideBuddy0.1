@@ -16,11 +16,11 @@ class NotificationEventService {
       const matchingIntents = await TravelIntent.find({
         source: { $regex: ride.source, $options: 'i' },
         destination: { $regex: ride.destination, $options: 'i' },
-        status: 'active'
-      }).populate('user', '_id name');
+        status: 'open'
+      }).populate('userId', '_id name');
 
       if (matchingIntents.length > 0) {
-        const userIds = matchingIntents.map(intent => intent.user._id);
+        const userIds = matchingIntents.map((intent) => intent.userId._id);
         
         await NotificationService.sendTemplateNotification(
           userIds,
@@ -161,7 +161,7 @@ class NotificationEventService {
    */
   static async onIntentMatched(intent, ride) {
     try {
-      const userId = intent.user._id || intent.user;
+      const userId = intent.userId?._id || intent.userId || intent.user;
 
       await NotificationService.sendTemplateNotification(
         userId,

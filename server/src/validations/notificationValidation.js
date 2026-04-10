@@ -2,28 +2,20 @@ const Joi = require('joi');
 
 const registerTokenSchema = Joi.object({
   expoPushToken: Joi.string()
-    .required()
+    .optional()
     .pattern(/^ExponentPushToken\[.+\]$|^ExpoPushToken\[.+\]$/)
     .messages({
-      'string.pattern.base': 'Invalid Expo push token format',
-      'any.required': 'Push token is required'
+      'string.pattern.base': 'Invalid Expo push token format'
     }),
+  fcmToken: Joi.string().trim().min(20).optional(),
   deviceId: Joi.string()
-    .required()
+    .optional()
     .min(10)
-    .max(100)
-    .messages({
-      'string.min': 'Device ID must be at least 10 characters',
-      'any.required': 'Device ID is required'
-    }),
+    .max(100),
   platform: Joi.string()
     .valid('ios', 'android', 'web')
-    .required()
-    .messages({
-      'any.only': 'Platform must be ios, android, or web',
-      'any.required': 'Platform is required'
-    })
-});
+    .optional()
+}).or('expoPushToken', 'fcmToken');
 
 const unregisterTokenSchema = Joi.object({
   deviceId: Joi.string()
@@ -35,7 +27,12 @@ const unregisterTokenSchema = Joi.object({
     })
 });
 
+const notificationIdParamsSchema = Joi.object({
+  id: Joi.string().hex().length(24).required()
+});
+
 module.exports = {
   registerTokenSchema,
-  unregisterTokenSchema
+  unregisterTokenSchema,
+  notificationIdParamsSchema
 };

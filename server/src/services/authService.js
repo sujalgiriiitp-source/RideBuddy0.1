@@ -10,7 +10,7 @@ const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, env.jwtSecret, { expiresIn: '7d' });
 };
 
-const signup = async ({ name, email, password, phone, role = 'user' }) => {
+const signup = async ({ name, email, password, phone, role = 'user', fcmToken }) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new ApiError(StatusCodes.CONFLICT, 'Email is already in use');
@@ -25,7 +25,8 @@ const signup = async ({ name, email, password, phone, role = 'user' }) => {
     email,
     password: hashedPassword,
     role,
-    phone: normalizedPhone
+    phone: normalizedPhone,
+    fcmToken: String(fcmToken || '').trim()
   });
 
   if (user.role === 'driver') {
@@ -51,7 +52,7 @@ const signup = async ({ name, email, password, phone, role = 'user' }) => {
   };
 };
 
-const login = async ({ email, password }) => {
+const login = async ({ email, password, fcmToken }) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid email or password');
@@ -60,6 +61,12 @@ const login = async ({ email, password }) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid email or password');
+  }
+
+  const normalizedFcmToken = String(fcmToken || '').trim();
+  if (normalizedFcmToken && normalizedFcmToken !== user.fcmToken) {
+    user.fcmToken = normalizedFcmToken;
+    await user.save();
   }
 
   const token = generateToken(user._id, user.role);

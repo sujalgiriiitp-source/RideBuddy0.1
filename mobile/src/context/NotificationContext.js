@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationServiceMobile from '../services/notificationService';
+import { apiRequest } from '../api';
 import { useAuth } from './AuthContext';
 
 const IN_APP_NOTIFICATIONS_KEY = '@ridebuddy:in_app_notifications';
@@ -69,6 +70,7 @@ export const NotificationProvider = ({ children, navigation }) => {
   const addInAppNotification = (payload = {}) => {
     const nextNotification = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      _id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title: payload.title || 'Notification',
       message: payload.message || '',
       type: payload.type || 'general',
@@ -87,11 +89,15 @@ export const NotificationProvider = ({ children, navigation }) => {
   const markNotificationAsRead = (notificationId) => {
     setNotifications((previousNotifications) => {
       const nextNotifications = previousNotifications.map((item) =>
-        item.id === notificationId ? { ...item, read: true } : item
+        (item.id === notificationId || item._id === notificationId) ? { ...item, read: true, isRead: true } : item
       );
       persistInAppNotifications(nextNotifications);
       return nextNotifications;
     });
+
+    apiRequest(`/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    }).catch(() => {});
   };
 
   const clearInAppNotifications = async () => {
@@ -121,8 +127,35 @@ export const NotificationProvider = ({ children, navigation }) => {
     restoreNotifications();
   }, []);
 
+  const refreshRemoteNotifications = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest('/notifications');
+      const remoteNotifications = (response.data || []).map((item) => ({
+        id: item._id,
+        _id: item._id,
+        title: item.title,
+        message: item.body,
+        type: item.type,
+        createdAt: item.createdAt,
+        read: Boolean(item.isRead),
+        isRead: Boolean(item.isRead),
+        rideId: item?.data?.rideId || null,
+        conversationId: item?.data?.conversationId || null
+      }));
+      setNotifications(remoteNotifications);
+      persistInAppNotifications(remoteNotifications);
+    } catch (error) {
+      console.error('Failed to refresh remote notifications:', error);
+    }
+  };
+
   useEffect(() => {
     console.log('[NotificationContext] init', { platform: Platform.OS, hasUser: Boolean(user) });
+    refreshRemoteNotifications().catch(() => {});
   }, [user]);
 
   // Register for push notifications when user logs in
@@ -157,6 +190,7 @@ export const NotificationProvider = ({ children, navigation }) => {
           type: pushContent?.data?.type || 'push',
           rideId: pushContent?.data?.rideId || null
         });
+        refreshRemoteNotifications().catch(() => {});
       },
       (response) => {
         // Handle notification tap
@@ -245,6 +279,19 @@ export const NotificationProvider = ({ children, navigation }) => {
       case 'intent_matched':
         if (data.rideId) {
           navigation.navigate('Ride Details', { rideId: data.rideId });
+        }
+        break;
+      case 'INTENT_REQUEST':
+        navigation.navigate('Intent');
+        break;
+      case 'RIDE_ACCEPTED':
+        if (data.conversationId) {
+          navigation.navigate('ChatScreen', {
+            conversationId: data.conversationId,
+            rideName: 'Intent Match'
+          });
+        } else {
+          navigation.navigate('Intent');
         }
         break;
       

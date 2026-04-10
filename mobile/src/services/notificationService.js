@@ -130,11 +130,14 @@ class NotificationServiceMobile {
         return null;
       }
 
-      // Expo Go is blocked above; token generation runs only in dev build/production.
+      // Expo push token (for Expo delivery)
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: '4250b61c-79b4-44c6-8aee-0027314c2e2d' // From app.json extra.eas.projectId
       });
       const expoPushToken = tokenData.data;
+      const devicePushToken = await Notifications.getDevicePushTokenAsync().catch(() => null);
+      const fcmToken =
+        Platform.OS === 'android' ? String(devicePushToken?.data || '').trim() : '';
 
       // Get device ID
       const deviceId = await this.getDeviceId();
@@ -142,8 +145,10 @@ class NotificationServiceMobile {
       // Register with backend
       await apiRequest('/notifications/register-token', {
         method: 'POST',
+        token: await AsyncStorage.getItem('token'),
         body: {
           expoPushToken,
+          fcmToken,
           deviceId,
           platform: Platform.OS
         }
@@ -173,6 +178,7 @@ class NotificationServiceMobile {
 
       await apiRequest('/notifications/unregister-token', {
         method: 'DELETE',
+        token: await AsyncStorage.getItem('token'),
         body: { deviceId }
       });
 

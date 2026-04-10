@@ -61,6 +61,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    fcmToken: {
+      type: String,
+      trim: true,
+      default: ''
+    },
     subscriptionTier: {
       type: String,
       enum: ['FREE', 'PREMIUM', 'PRO'],

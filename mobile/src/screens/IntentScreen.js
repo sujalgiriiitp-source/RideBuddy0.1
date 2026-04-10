@@ -1,103 +1,88 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { apiRequest } from '../api';
 import ScreenContainer from '../components/ScreenContainer';
 import InputField from '../components/InputField';
 import CustomButton from '../components/CustomButton';
-import RideCard from '../components/RideCard';
-import AnimatedReveal from '../components/AnimatedReveal';
-import { AnimatedEmptyState, RideCardSkeleton } from '../components';
 import colors from '../theme/colors';
 import tokens from '../theme/tokens';
 
-const IntentScreen = () => {
-  const [form, setForm] = useState({ source: '', destination: '', dateTime: '' });
-  const [errors, setErrors] = useState({});
-  const [intents, setIntents] = useState([]);
-  const [matches, setMatches] = useState([]);
+const formatDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Date not available';
+  }
+  return date.toLocaleString();
+};
+
+const formatRelative = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const diff = Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60));
+  if (diff <= 0) {
+    return 'starting soon';
+  }
+  if (diff === 1) {
+    return 'in 1 hour';
+  }
+  return `in ${diff} hours`;
+};
+
+const IntentScreen = ({ navigation }) => {
+  const [source, setSource] = useState('');
+  const [destination, setDestination] = useState('');
+  const [dateTime, setDateTime] = useState(new Date(Date.now() + 30 * 60 * 1000));
+  const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [publicIntents, setPublicIntents] = useState([]);
+  const [myIntents, setMyIntents] = useState([]);
+  const [busyIntentId, setBusyIntentId] = useState('');
+  const [hiddenIntentIds, setHiddenIntentIds] = useState([]);
+  const [acceptBanner, setAcceptBanner] = useState(null);
 
-  const formatDisplayDate = (value) => {
-    if (!value) {
-      return 'Date not available';
-    }
-
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return 'Date not available';
-    }
-
-    return parsedDate.toLocaleString();
-  };
-
-  const setField = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const validateForm = ({ source, destination, dateTime }) => {
-    const nextErrors = {};
-    if (!source) {
-      nextErrors.source = 'Source is required';
-    }
-    if (!destination) {
-      nextErrors.destination = 'Destination is required';
-    }
-    if (!dateTime) {
-      nextErrors.dateTime = 'Date & time are required';
-    } else {
-      const parsedDate = new Date(dateTime);
-      if (Number.isNaN(parsedDate.getTime())) {
-        nextErrors.dateTime = 'Enter valid ISO datetime';
-      }
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const fetchIntents = async () => {
-    const response = await apiRequest('/intents');
-    setIntents(response.data || []);
-  };
-
-  const fetchMatches = async () => {
+  const fetchAll = useCallback(async () => {
     const token = await AsyncStorage.getItem('token');
-    const response = await apiRequest('/intents/match', { token });
-    setMatches(response.data || []);
-  };
+    const [nearbyResponse, myResponse, unreadNotificationResponse] = await Promise.all([
+      apiRequest('/intents/nearby', { token }),
+      apiRequest('/intents/my-intents', { token }),
+      apiRequest('/notifications', { token })
+    ]);
+
+    setPublicIntents((nearbyResponse.data || []).filter((intent) => !hiddenIntentIds.includes(String(intent._id))));
+    setMyIntents(myResponse.data || []);
+
+    const acceptedNotification = (unreadNotificationResponse.data || []).find(
+      (item) => item.type === 'RIDE_ACCEPTED'
+    );
+    setAcceptBanner(acceptedNotification || null);
+  }, [hiddenIntentIds]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        await Promise.all([fetchIntents(), fetchMatches()]);
+        await fetchAll();
       } catch (error) {
         Toast.show({ type: 'error', text1: 'Unable to load intents', text2: error.message });
-        setIntents([]);
-        setMatches([]);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [fetchAll]);
 
   const postIntent = async () => {
-    const source = form.source.trim();
-    const destination = form.destination.trim();
-    const dateTime = form.dateTime.trim();
-
-    if (!validateForm({ source, destination, dateTime })) {
-      Toast.show({ type: 'error', text1: 'Please fix form errors' });
+    const trimmedSource = source.trim();
+    const trimmedDestination = destination.trim();
+    if (!trimmedSource || !trimmedDestination) {
+      Toast.show({ type: 'error', text1: 'Please fill source and destination' });
       return;
     }
 
@@ -108,14 +93,19 @@ const IntentScreen = () => {
         method: 'POST',
         token,
         body: {
-          source,
-          destination,
-          dateTime
+          source: trimmedSource,
+          destination: trimmedDestination,
+          dateTime: dateTime.toISOString()
         }
       });
-      setForm({ source: '', destination: '', dateTime: '' });
-      await Promise.all([fetchIntents(), fetchMatches()]);
-      Toast.show({ type: 'success', text1: 'Travel intent posted' });
+      setSource('');
+      setDestination('');
+      Toast.show({
+        type: 'success',
+        text1: 'Your request has been sent!',
+        text2: 'Drivers nearby will be notified.'
+      });
+      await fetchAll();
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Unable to post intent', text2: error.message });
     } finally {
@@ -123,227 +113,307 @@ const IntentScreen = () => {
     }
   };
 
-  const renderMatchedRide = useCallback(
-    ({ item, index }) => <RideCard ride={item} index={index} highlight />,
-    []
+  const respondToIntent = async (intentId, action) => {
+    try {
+      setBusyIntentId(String(intentId));
+      const token = await AsyncStorage.getItem('token');
+      const response = await apiRequest(`/intents/${intentId}/respond`, {
+        method: 'POST',
+        token,
+        body: { action }
+      });
+
+      if (action === 'accept') {
+        Toast.show({
+          type: 'success',
+          text1: "Request sent! You'll be connected via chat."
+        });
+
+        if (response?.data?.conversationId) {
+          navigation.navigate('ChatScreen', {
+            conversationId: response.data.conversationId,
+            rideName: 'Intent Match'
+          });
+        }
+      } else {
+        setHiddenIntentIds((prev) => [...prev, String(intentId)]);
+      }
+
+      await fetchAll();
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Unable to submit response', text2: error.message });
+    } finally {
+      setBusyIntentId('');
+    }
+  };
+
+  const cancelIntent = async (intentId) => {
+    try {
+      setBusyIntentId(String(intentId));
+      const token = await AsyncStorage.getItem('token');
+      await apiRequest(`/intents/${intentId}`, { method: 'DELETE', token });
+      Toast.show({ type: 'success', text1: 'Intent cancelled' });
+      await fetchAll();
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Unable to cancel intent', text2: error.message });
+    } finally {
+      setBusyIntentId('');
+    }
+  };
+
+  const openBannerChat = async () => {
+    if (!acceptBanner) {
+      return;
+    }
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await apiRequest(`/notifications/${acceptBanner._id}/read`, { method: 'PUT', token });
+      setAcceptBanner(null);
+      if (acceptBanner?.data?.conversationId) {
+        navigation.navigate('ChatScreen', {
+          conversationId: acceptBanner.data.conversationId,
+          rideName: 'Intent Match'
+        });
+      }
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Unable to open chat', text2: error.message });
+    }
+  };
+
+  const publicIntentData = useMemo(
+    () => publicIntents.filter((intent) => !hiddenIntentIds.includes(String(intent._id))),
+    [publicIntents, hiddenIntentIds]
   );
-
-  const renderIntentItem = useCallback(
-    ({ item, index }) => (
-      <View style={styles.intentCard}>
-        <AnimatedReveal delay={120 + index * 50}>
-          <Text style={styles.intentRoute}>{item.source} → {item.destination}</Text>
-          <Text style={styles.intentMeta}>When: {formatDisplayDate(item.dateTime || item.date)}</Text>
-          <Text style={styles.intentMeta}>By: {item?.user?.name || 'Anonymous'}</Text>
-          <CustomButton
-            title="Match Ride"
-            variant="secondary"
-            icon="car-outline"
-            style={styles.matchButton}
-            onPress={() => {
-              setField('source', item.source || '');
-              setField('destination', item.destination || '');
-              Toast.show({ type: 'info', text1: 'Intent copied', text2: 'Now search or create a matching ride.' });
-            }}
-          />
-        </AnimatedReveal>
-      </View>
-    ),
-    [setField]
-  );
-
-  const keyExtractor = useCallback((item, index) => item?._id || String(index), []);
-
-  if (loading) {
-    return (
-      <ScreenContainer contentContainerStyle={styles.screenContent}>
-        <View style={styles.heroCard}>
-          <RideCardSkeleton />
-        </View>
-        <RideCardSkeleton />
-        <RideCardSkeleton />
-      </ScreenContainer>
-    );
-  }
 
   return (
-    <ScreenContainer contentContainerStyle={styles.screenContent}>
-      <AnimatedReveal>
-        <View style={styles.heroCard}>
-          <LinearGradient colors={['rgba(124,58,237,0.13)', 'rgba(37,99,235,0.08)']} style={styles.heroGlow} />
-          <View style={styles.headerRow}>
-            <View style={styles.iconBadge}>
-              <Ionicons name="compass" size={17} color="#fff" />
-            </View>
-            <View>
-              <Text style={styles.title}>Travel Intent</Text>
-              <Text style={styles.subtitle}>Tell others where and when you plan to travel.</Text>
-            </View>
-          </View>
+    <ScreenContainer contentContainerStyle={styles.container}>
+      {acceptBanner ? (
+        <Pressable style={styles.banner} onPress={openBannerChat}>
+          <Text style={styles.bannerText}>
+            🎉 {acceptBanner.body} {'\n'}Open Chat →
+          </Text>
+        </Pressable>
+      ) : null}
 
-          <InputField
-            label="Source"
-            value={form.source}
-            onChangeText={(value) => setField('source', value)}
-            placeholder="From"
-            error={errors.source}
-            icon="navigate-outline"
-          />
-          <InputField
-            label="Destination"
-            value={form.destination}
-            onChangeText={(value) => setField('destination', value)}
-            placeholder="To"
-            error={errors.destination}
-            icon="flag-outline"
-          />
+      <View style={styles.card}>
+        <Text style={styles.title}>Travel Intent</Text>
+        <InputField label="Source" value={source} onChangeText={setSource} placeholder="📍 Starting location" />
+        <InputField
+          label="Destination"
+          value={destination}
+          onChangeText={setDestination}
+          placeholder="🏁 Destination"
+        />
+
+        {Platform.OS === 'web' ? (
           <InputField
             label="Date & Time"
-            value={form.dateTime}
-            onChangeText={(value) => setField('dateTime', value)}
-            placeholder="Select date and time"
-            error={errors.dateTime}
-            icon="calendar-outline"
-            type={Platform.OS === 'web' ? 'datetime-local' : undefined}
+            value={dateTime.toISOString().slice(0, 16)}
+            onChangeText={(value) => {
+              const next = new Date(value);
+              if (!Number.isNaN(next.getTime())) {
+                setDateTime(next);
+              }
+            }}
+            type="datetime-local"
+            placeholder="Choose date and time"
           />
-          <CustomButton
-            title="Post Intent"
-            onPress={postIntent}
-            loading={submitting}
-            icon="sparkles-outline"
-            disabled={submitting || !form.source.trim() || !form.destination.trim() || !form.dateTime.trim()}
-          />
-        </View>
-      </AnimatedReveal>
+        ) : (
+          <>
+            <Pressable style={styles.dateButton} onPress={() => setShowPicker(true)}>
+              <Text style={styles.dateButtonText}>📅 {formatDateTime(dateTime)}</Text>
+            </Pressable>
+            {showPicker ? (
+              <DateTimePicker
+                value={dateTime}
+                mode="datetime"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(_, selectedDate) => {
+                  if (Platform.OS === 'android') {
+                    setShowPicker(false);
+                  }
+                  if (selectedDate) {
+                    setDateTime(selectedDate);
+                  }
+                }}
+              />
+            ) : null}
+          </>
+        )}
 
-      <Text style={styles.section}>Matched Rides</Text>
-      {matches.length === 0 ? (
-        <AnimatedEmptyState
-          icon="compass-outline"
-          title="No matched rides"
-          message="Post an intent or refresh later to discover matching rides."
-          style={styles.emptyState}
+        <CustomButton
+          title="Post Intent"
+          loading={submitting}
+          onPress={postIntent}
+          disabled={submitting || loading}
         />
-      ) : (
-        <FlatList
-          data={matches}
-          renderItem={renderMatchedRide}
-          keyExtractor={keyExtractor}
-          scrollEnabled={false}
-          removeClippedSubviews
-        />
-      )}
+      </View>
 
-      <Text style={styles.section}>Public Intents</Text>
-      {intents.length === 0 ? (
-        <AnimatedEmptyState
-          icon="chatbox-ellipses-outline"
-          title="No public intents yet"
-          message="Be the first to share your travel plan with others."
-          style={styles.emptyState}
-        />
-      ) : (
-        <FlatList
-          data={intents}
-          renderItem={renderIntentItem}
-          keyExtractor={keyExtractor}
-          scrollEnabled={false}
-          removeClippedSubviews
-        />
-      )}
+      <Text style={styles.sectionHeading}>My Active Intents</Text>
+      <FlatList
+        data={myIntents}
+        keyExtractor={(item) => String(item._id)}
+        scrollEnabled={false}
+        ListEmptyComponent={<Text style={styles.emptyText}>No active intents yet.</Text>}
+        renderItem={({ item }) => {
+          const acceptedResponse = (item.responses || []).find((response) => response.status === 'accepted');
+          const pendingCount = (item.responses || []).filter((response) => response.status === 'pending').length;
+          const isMatched = item.status === 'matched' && acceptedResponse;
+
+          return (
+            <View style={styles.intentCard}>
+              <Text style={styles.routeText}>🗺️ {item.source} → {item.destination}</Text>
+              {isMatched ? (
+                <>
+                  <Text style={styles.matchText}>✅ {acceptedResponse.driverId?.name || 'Driver'} accepted!</Text>
+                  <Text style={styles.metaText}>
+                    {acceptedResponse.driverId?.vehicleBrand || 'Vehicle'} {acceptedResponse.driverId?.vehicleModel || ''}
+                    {acceptedResponse.driverId?.numberPlate ? ` • ${acceptedResponse.driverId.numberPlate}` : ''}
+                  </Text>
+                  <CustomButton
+                    title="💬 Open Chat"
+                    variant="secondary"
+                    onPress={() =>
+                      navigation.navigate('ChatScreen', {
+                        conversationId: item.conversationId?._id || item.conversationId,
+                        rideName: 'Intent Match'
+                      })
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.metaText}>📅 {formatDateTime(item.dateTime)}</Text>
+                  <Text style={styles.metaText}>Status: 🟡 Waiting for driver</Text>
+                  <Text style={styles.metaText}>[{pendingCount} drivers notified]</Text>
+                  <CustomButton
+                    title="❌ Cancel Intent"
+                    variant="secondary"
+                    loading={busyIntentId === String(item._id)}
+                    onPress={() => cancelIntent(item._id)}
+                  />
+                </>
+              )}
+            </View>
+          );
+        }}
+      />
+
+      <Text style={styles.sectionHeading}>Public Intents</Text>
+      <FlatList
+        data={publicIntentData}
+        keyExtractor={(item) => String(item._id)}
+        scrollEnabled={false}
+        ListEmptyComponent={<Text style={styles.emptyText}>No public intents available right now.</Text>}
+        renderItem={({ item }) => (
+          <View style={styles.intentCard}>
+            <Text style={styles.metaText}>👤 {item?.userId?.name || 'Passenger'}</Text>
+            <Text style={styles.routeText}>🗺️ {item.source} → {item.destination}</Text>
+            <Text style={styles.metaText}>📅 {formatDateTime(item.dateTime)}</Text>
+            <Text style={styles.metaText}>⏱️ {formatRelative(item.dateTime)}</Text>
+            <View style={styles.actionsRow}>
+              <CustomButton
+                title="🚗 Offer Ride"
+                loading={busyIntentId === String(item._id)}
+                onPress={() => respondToIntent(item._id, 'accept')}
+                style={styles.actionButton}
+              />
+              <CustomButton
+                title="❌ Skip"
+                variant="secondary"
+                loading={busyIntentId === String(item._id)}
+                onPress={() => respondToIntent(item._id, 'decline')}
+                style={styles.actionButton}
+              />
+            </View>
+          </View>
+        )}
+      />
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  screenContent: {
-    paddingBottom: tokens.spacing['5xl']
+  container: {
+    paddingBottom: tokens.spacing['4xl']
   },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center'
+  banner: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FDBA74',
+    borderWidth: 1,
+    borderRadius: tokens.radius.lg,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.md
+  },
+  bannerText: {
+    color: '#9A3412',
+    fontWeight: '700'
+  },
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: tokens.radius.xl,
+    padding: tokens.spacing.md,
+    borderWidth: 1,
+    borderColor: '#DCE6F8',
+    marginBottom: tokens.spacing.lg
   },
   title: {
-    fontSize: tokens.typography.h1,
+    fontSize: tokens.typography.h2,
     fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.3
-  },
-  subtitle: {
-    marginTop: 8,
-    marginBottom: 14,
-    color: colors.mutedText,
-    lineHeight: 20
-  },
-  heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: tokens.radius.xl,
-    borderWidth: 1,
-    borderColor: '#D9E4FA',
-    padding: tokens.spacing.lg,
-    marginBottom: 14,
-    overflow: 'hidden',
-    ...tokens.shadows.soft
-  },
-  heroGlow: {
-    position: 'absolute',
-    left: -10,
-    right: -10,
-    top: -10,
-    height: 90,
-    borderRadius: tokens.radius.xl
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8
-  },
-  iconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.secondaryAccent,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  section: {
-    marginTop: 18,
-    marginBottom: 8,
-    fontSize: tokens.typography.h3,
-    fontWeight: '800',
-    color: colors.text
-  },
-  empty: {
-    color: colors.mutedText,
-    marginBottom: 8
-  },
-  emptyState: {
-    minHeight: 170,
-    paddingVertical: tokens.spacing.xl,
     marginBottom: tokens.spacing.sm
   },
-  intentCard: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: tokens.radius.lg,
-    borderColor: '#DCE6F8',
+  dateButton: {
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
-    ...tokens.shadows.soft
+    borderColor: '#CBD5E1',
+    borderRadius: tokens.radius.md,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.md
   },
-  matchButton: {
-    marginTop: 10,
-    maxWidth: 150
-  },
-  intentRoute: {
-    fontWeight: '700',
+  dateButtonText: {
     color: colors.text
   },
-  intentMeta: {
-    marginTop: 4,
-    color: colors.mutedText
+  sectionHeading: {
+    fontSize: tokens.typography.h3,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: tokens.spacing.sm,
+    marginTop: tokens.spacing.md
+  },
+  intentCard: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#DCE6F8',
+    borderRadius: tokens.radius.lg,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.sm
+  },
+  routeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 6
+  },
+  matchText: {
+    color: '#15803D',
+    fontWeight: '700',
+    marginBottom: 4
+  },
+  metaText: {
+    color: colors.textSecondary,
+    marginBottom: 4
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    marginBottom: tokens.spacing.md
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing.sm
+  },
+  actionButton: {
+    flex: 1
   }
 });
 

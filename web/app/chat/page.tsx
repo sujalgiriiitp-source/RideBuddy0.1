@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const mockConversations = [
-  { id: 1, name: 'Sujal Giri', avatar: 'SG', lastMessage: 'See you at 10 AM!', time: '2m ago', unread: 2 },
-  { id: 2, name: 'Rahul Kumar', avatar: 'RK', lastMessage: 'Thanks for the ride', time: '1h ago', unread: 0 },
+  { id: '1', name: 'Sujal Giri', avatar: 'SG', lastMessage: 'See you at 10 AM!', time: '2m ago', unread: 2 },
+  { id: '2', name: 'Rahul Kumar', avatar: 'RK', lastMessage: 'Thanks for the ride', time: '1h ago', unread: 0 },
 ];
 
 export default function ChatPage() {
-  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const params = useSearchParams();
+  const [selectedChat, setSelectedChat] = useState<string | null>(params.get('conversationId') || null);
 
   return (
     <div className="min-h-screen flex">
