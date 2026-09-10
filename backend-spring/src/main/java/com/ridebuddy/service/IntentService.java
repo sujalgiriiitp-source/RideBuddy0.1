@@ -16,7 +16,7 @@ public class IntentService {
     private final TravelIntentRepository intents; private final RideRepository rides; private final UserService users; private final RideService rideService;
     public IntentService(TravelIntentRepository intents, RideRepository rides, UserService users, RideService rideService) { this.intents = intents; this.rides = rides; this.users = users; this.rideService = rideService; }
     @Transactional public Response create(UUID userId, CreateRequest request) { return response(intents.save(new TravelIntent(users.get(userId), request.source().trim(), request.destination().trim(), request.departureTime()))); }
-    public List<Response> mine(UUID userId) { return intents.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::response).toList(); }
+    public List<Response> mine(UUID userId) { return intents.findByUser_IdOrderByCreatedAtDesc(userId).stream().map(this::response).toList(); }
     public List<IntentDtos.MatchResponse> match(UUID userId, UUID intentId) {
         TravelIntent intent = intents.findById(intentId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "INTENT_NOT_FOUND", "Travel intent not found"));
         if (!intent.getUser().getId().equals(userId)) throw new ApiException(HttpStatus.FORBIDDEN, "INTENT_ACCESS_DENIED", "Only the intent owner can request matches");

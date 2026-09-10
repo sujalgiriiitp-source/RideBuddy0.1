@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "RideBuddy Spring v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "rideId", "value": "" },
+    { "key": "intentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\":\"Asha\",\"email\":\"asha{{$randomInt}}@example.com\",\"password\":\"correct-horse-battery\",\"role\":\"USER\"}" },
+        "url": "{{baseUrl}}/auth/register"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"asha@example.com\",\"password\":\"correct-horse-battery\"}" },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "List rides",
+      "request": { "method": "GET", "url": "{{baseUrl}}/rides?page=0&size=20&sort=departureTime,asc" }
+    },
+    {
+      "name": "Create ride",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"source\":\"Campus\",\"destination\":\"Airport\",\"departureTime\":\"2030-01-01T10:00:00Z\",\"price\":100,\"seats\":3}" },
+        "url": "{{baseUrl}}/rides"
+      }
+    },
+    {
+      "name": "Create intent",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"source\":\"Campus\",\"destination\":\"Airport\",\"departureTime\":\"2030-01-01T10:00:00Z\"}" },
+        "url": "{{baseUrl}}/intents"
+      }
+    },
+    {
+      "name": "Intent matches",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/intents/{{intentId}}/match" }
+    },
+    {
+      "name": "Current user",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/users/me" }
+    },
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "http://localhost:8080/actuator/health" }
+    }
+  ]
+}

@@ -22,12 +22,12 @@ public class RideService {
     @Transactional public BookingDtos.Response book(UUID userId, UUID rideId, int seats) {
         Ride ride = rides.findByIdForUpdate(rideId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "RIDE_NOT_FOUND", "Ride not found"));
         if (ride.getOwner().getId().equals(userId)) throw new ApiException(HttpStatus.BAD_REQUEST, "OWNER_CANNOT_BOOK", "Ride owners cannot book their own ride");
-        if (bookings.findByRideIdAndUserId(rideId, userId).filter(b -> b.getStatus() == BookingStatus.CONFIRMED).isPresent()) throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_BOOKING", "User already has an active booking");
+        if (bookings.findByRide_IdAndUser_Id(rideId, userId).filter(b -> b.getStatus() == BookingStatus.CONFIRMED).isPresent()) throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_BOOKING", "User already has an active booking");
         try { ride.reserve(seats); } catch (IllegalStateException e) { throw new ApiException(HttpStatus.BAD_REQUEST, "SEAT_UNAVAILABLE", e.getMessage()); }
         Booking booking = bookings.save(new Booking(ride, users.get(userId), seats));
         return new BookingDtos.Response(booking.getId(), rideId, userId, booking.getSeats(), booking.getStatus());
     }
-    @Transactional public void leave(UUID userId, UUID rideId) { Booking booking = bookings.findByRideIdAndUserId(rideId, userId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found")); if (booking.getStatus() == BookingStatus.CONFIRMED) { booking.getRide().release(booking.getSeats()); booking.cancel(); } }
+    @Transactional public void leave(UUID userId, UUID rideId) { Booking booking = bookings.findByRide_IdAndUser_Id(rideId, userId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "BOOKING_NOT_FOUND", "Booking not found")); if (booking.getStatus() == BookingStatus.CONFIRMED) { booking.getRide().release(booking.getSeats()); booking.cancel(); } }
     private Ride owned(UUID actor, UUID id) { Ride ride = rides.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "RIDE_NOT_FOUND", "Ride not found")); if (!ride.getOwner().getId().equals(actor)) throw new ApiException(HttpStatus.FORBIDDEN, "RIDE_ACCESS_DENIED", "Only the ride owner can modify it"); return ride; }
     public Response response(Ride r) { return new Response(r.getId(), r.getOwner().getId(), r.getOwner().getName(), r.getSource(), r.getDestination(), r.getDepartureTime(), r.getPrice(), r.getTotalSeats(), r.getAvailableSeats(), r.getStatus()); }
 }

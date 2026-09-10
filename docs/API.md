@@ -16,6 +16,8 @@ The new backend is versioned under `/api/v1`. The existing Node.js API remains a
 
 `GET /api/v1/users/me` returns the authenticated user's profile.
 
+`PUT /api/v1/users/me` updates the authenticated user's name, phone, and vehicle details.
+
 ## Rides
 
 | Method | Path | Auth | Description |
@@ -37,6 +39,19 @@ Search supports `source`, `destination`, `from`, `to`, `page`, `size`, and `sort
 | POST | `/api/v1/intents` | Yes | Create an open travel intent |
 | GET | `/api/v1/intents` | Yes | List the current user's intents |
 | GET | `/api/v1/intents/{id}/match` | Owner | Rank compatible open rides |
+
+## Ratings, notifications, and chat
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/ratings` | Yes | Rate another user for a ride |
+| GET | `/api/v1/ratings/user/{userId}` | No | List ratings for a user |
+| GET | `/api/v1/notifications` | Yes | List in-app notifications |
+| PUT | `/api/v1/notifications/{id}/read` | Yes | Mark an owned notification read |
+| POST | `/api/v1/chat/conversations` | Yes | Start a participant conversation |
+| GET | `/api/v1/chat/conversations` | Yes | List conversations for the user |
+| GET | `/api/v1/chat/messages/{conversationId}` | Yes | List authorized conversation messages |
+| POST | `/api/v1/chat/messages` | Yes | Send a persisted text message |
 
 Validation errors use HTTP 400 and a consistent `ErrorResponse`. Missing or invalid tokens return HTTP 401/403 through Spring Security.
 
