@@ -23,6 +23,9 @@ public class UserService {
         if (!encoder.matches(request.password(), user.getPasswordHash())) throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid email or password");
         return user;
     }
+    public User findByEmail(String email) { return users.findByEmailIgnoreCase(email).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found")); }
+    @Transactional public void verify(User user) { user.verifyEmail(); }
+    @Transactional public void updatePassword(User user, String password) { user.setPasswordHash(encoder.encode(password)); }
     public User get(UUID id) { return users.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found")); }
     public UserResponse response(User u) { return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.getPhone(), u.getVehicleBrand(), u.getVehicleModel(), u.getCreatedAt()); }
 }

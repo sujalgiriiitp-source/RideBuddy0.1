@@ -10,7 +10,9 @@ The new backend is versioned under `/api/v1`. The existing Node.js API remains a
 {"name":"Asha","email":"asha@example.com","password":"correct-horse-battery","role":"USER"}
 ```
 
-`POST /api/v1/auth/login` returns an access token. Send it as `Authorization: Bearer <token>` to protected endpoints.
+`POST /api/v1/auth/login` returns an access token and rotating refresh token. Send the access token as `Authorization: Bearer <token>` to protected endpoints. Use `/auth/refresh` to rotate and `/auth/logout` to revoke a refresh token.
+
+`POST /api/v1/auth/forgot-password` and `POST /api/v1/auth/reset-password` provide single-use password reset tokens. `POST /api/v1/auth/verify-email?token=...` consumes an email verification token. Configure SMTP and `MAIL_ENABLED=true` for delivery.
 
 ## Users
 

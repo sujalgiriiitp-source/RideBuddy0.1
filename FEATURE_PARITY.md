@@ -19,10 +19,10 @@ Compared against `server/src/routes`, `server/src/controllers`, `server/src/mode
 ## Partially Implemented
 
 - [Partially Implemented] Mobile integration: the Expo client still defaults to the Node compatibility API. Spring endpoints are documented and independently runnable, but the client response envelope and endpoint aliases still need an end-to-end cutover.
-- [Partially Implemented] Authentication lifecycle: access tokens and logout-by-expiration are implemented; refresh-token rotation and server-side revocation are not.
+- [Implemented] Authentication lifecycle: BCrypt access tokens, 30-day rotating refresh tokens, refresh-token revocation on logout, and one-time account-token persistence are implemented.
 - [Partially Implemented] Chat: persisted HTTP conversations/messages are implemented; Socket.io-compatible real-time transport and read receipts are not.
 - [Partially Implemented] Notifications: persisted in-app notifications are implemented; FCM/Expo push-token registration and delivery are not.
-- [Partially Implemented] Booking API: core ride join/leave is implemented; legacy booking listing and per-ride booking compatibility endpoints still need aliases.
+- [Implemented] Booking API: ride join/leave, `/bookings`, `/bookings/my`, `/bookings/my-bookings`, `/bookings/ride/{rideId}/mine`, and cancellation aliases are implemented.
 - [Partially Implemented] Integration verification: Maven tests run locally; PostgreSQL/Testcontainers and Docker runtime verification depend on the local Docker runtime.
 
 ## Missing and intentionally retained in Node.js
@@ -32,7 +32,7 @@ Compared against `server/src/routes`, `server/src/controllers`, `server/src/mode
 - [Missing] Subscription tiers and subscription middleware.
 - [Missing] Socket.io ride tracking.
 - [Missing] Expo/FCM push-token registration and delivery.
-- [Missing] Legacy password reset, email verification, and resend-verification workflows.
-- [Missing] Full ratings/booking/mobile response-envelope compatibility.
+- [Partially Implemented] Password reset and email verification tokens are persisted, single-use, and SMTP-deliverable when `MAIL_ENABLED=true`; resend-verification and a configured production SMTP deployment remain.
+- [Partially Implemented] Expo response-envelope compatibility is normalized in the shared client and auth/booking aliases are available; complete mobile cutover still requires deploying Spring and exercising every screen against it.
 
 These features remain in the existing Node service and have not been deleted. The migration is not complete until each retained feature has a verified Spring contract and the mobile client has been switched deliberately.

@@ -17,6 +17,7 @@ public class User {
     @Column(name = "vehicle_model") private String vehicleModel;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
+    @Column(name = "email_verified", nullable = false) private boolean emailVerified;
 
     protected User() {}
     public User(String name, String email, String passwordHash, Role role, String phone) {
@@ -27,6 +28,8 @@ public class User {
     public UUID getId() { return id; } public String getName() { return name; } public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; } public Role getRole() { return role; } public String getPhone() { return phone; }
     public String getVehicleBrand() { return vehicleBrand; } public String getVehicleModel() { return vehicleModel; } public Instant getCreatedAt() { return createdAt; }
+    public boolean isEmailVerified() { return emailVerified; } public void verifyEmail() { emailVerified = true; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public void updateProfile(String name, String phone, String vehicleBrand, String vehicleModel) {
         this.name = name; this.phone = phone; this.vehicleBrand = vehicleBrand; this.vehicleModel = vehicleModel;
     }

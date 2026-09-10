@@ -8,5 +8,9 @@ public final class AuthDtos {
     public record RegisterRequest(@NotBlank @Size(max=120) String name, @NotBlank @Email String email, @NotBlank @Size(min=8, max=72) String password, @Size(max=32) String phone, Role role) {}
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
     public record UserResponse(UUID id, String name, String email, Role role, String phone, String vehicleBrand, String vehicleModel, Instant createdAt) {}
-    public record AuthResponse(String accessToken, UserResponse user) {}
+    public record AuthResponse(String accessToken, String refreshToken, UserResponse user) {}
+    public record RefreshRequest(@NotBlank String refreshToken) {}
+    public record TokenMessage(String message) {}
+    public record ForgotPasswordRequest(@NotBlank @Email String email) {}
+    public record ResetPasswordRequest(@NotBlank String token, @NotBlank @Size(min=8, max=72) String password) {}
 }

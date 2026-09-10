@@ -262,6 +262,7 @@ The existing Node.js/Express backend and Expo mobile application remain in place
 - Java 17-compatible Spring Boot 3.3
 - PostgreSQL with Flyway migrations
 - Spring Security, BCrypt, and signed JWT access tokens
+- Rotating refresh tokens and one-time password reset/email verification tokens
 - Ride CRUD, paginated search, transactional seat reservations, and leave flow
 - Travel intents with route/time ranking
 - Bean Validation, centralized error responses, Actuator, and OpenAPI
@@ -282,6 +283,8 @@ mvn spring-boot:run
 ```
 
 The API runs on `http://localhost:8080`; health is available at `/actuator/health` and Swagger UI at `/swagger-ui/index.html`.
+
+To use the Spring API from Expo, set `EXPO_PUBLIC_API_URL=http://localhost:8080/api/v1` in the mobile environment. The shared mobile client normalizes Spring's direct DTO responses into the existing `{ success, data }` shape.
 
 Run the backend tests with:
 

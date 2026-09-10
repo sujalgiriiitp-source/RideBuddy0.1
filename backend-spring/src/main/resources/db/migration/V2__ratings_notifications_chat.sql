@@ -44,3 +44,26 @@ CREATE TABLE messages (
     created_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX messages_conversation_idx ON messages (conversation_id, created_at DESC);
+
+ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(128) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX refresh_tokens_user_idx ON refresh_tokens (user_id, revoked_at, expires_at);
+
+CREATE TABLE account_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(128) NOT NULL UNIQUE,
+    token_type VARCHAR(30) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX account_tokens_lookup_idx ON account_tokens (token_hash, token_type, used_at, expires_at);

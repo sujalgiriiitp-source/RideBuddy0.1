@@ -8,5 +8,5 @@ import java.util.UUID;
 public class UserController {
     private final UserService users;
     public UserController(UserService users) { this.users = users; }
-    @GetMapping("/me") public UserResponse me(Authentication authentication) { return users.response(users.get((UUID) authentication.getPrincipal())); }
+    @GetMapping({"/me","/profile"}) public UserResponse me(Authentication authentication) { return users.response(users.get((UUID) authentication.getPrincipal())); }
 }
