@@ -5,6 +5,7 @@ import { apiRequest } from '../api';
 const AuthContext = createContext(null);
 const TOKEN_STORAGE_KEY = 'token';
 const USER_STORAGE_KEY = 'user';
+const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -29,10 +30,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const saveAuthState = async (payload) => {
-    setToken(payload.token);
+    const accessToken = payload.token || payload.accessToken;
+    setToken(accessToken);
     setUser(payload.user);
-    await AsyncStorage.setItem(TOKEN_STORAGE_KEY, payload.token);
+    await AsyncStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
     await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(payload.user));
+    if (payload.refreshToken) {
+      await AsyncStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, payload.refreshToken);
+    }
   };
 
   const login = async (email, password) => {
@@ -64,6 +69,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+    if (refreshToken) {
+      try {
+        await apiRequest('/auth/logout', { method: 'POST', body: { refreshToken } });
+      } finally {
+        await AsyncStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+      }
+    }
     setToken(null);
     setUser(null);
     await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);

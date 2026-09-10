@@ -141,7 +141,11 @@ export const apiRequest = async (path, options = {}) => {
       if (!hasHttpFailure && !hasAppFailure) {
         setApiOffline(false);
         clearTimeout(timeoutId);
-        return payload;
+        // Spring v1 returns resource DTOs directly; normalize them to the
+        // envelope used by the existing Expo screens.
+        return payload?.success === undefined
+          ? { success: true, message: 'Request completed', data: payload }
+          : payload;
       }
 
       const friendlyMessage = buildFriendlyStatusMessage(response.status, payload?.message);

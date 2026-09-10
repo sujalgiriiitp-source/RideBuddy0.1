@@ -24,3 +24,5 @@ mobile/ios/
 
 # macOS
 .DS_Store
+# Java/Maven build output
+backend-spring/target/
