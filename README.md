@@ -254,3 +254,50 @@ All API responses follow:
 - Set production env vars (`MONGO_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`)
 - For mobile production builds, use EAS Build and set `EXPO_PUBLIC_API_URL` to deployed backend URL
 # RideBuddy0.1
+
+## Spring Boot migration backend
+
+The existing Node.js/Express backend and Expo mobile application remain in place. A versioned Java backend is now available under `backend-spring/` for progressive migration:
+
+- Java 17-compatible Spring Boot 3.3
+- PostgreSQL with Flyway migrations
+- Spring Security, BCrypt, and signed JWT access tokens
+- Ride CRUD, paginated search, transactional seat reservations, and leave flow
+- Travel intents with route/time ranking
+- Bean Validation, centralized error responses, Actuator, and OpenAPI
+
+This backend is deliberately additive. The Node.js routes remain the compatibility implementation for features that have not yet reached parity, including chat, push notifications, uploads, maps, subscriptions, and ratings.
+
+### Run locally
+
+Requirements: Java 17+, Maven 3.9+, and PostgreSQL 16+.
+
+```bash
+cd backend-spring
+export DATABASE_URL=jdbc:postgresql://localhost:5432/ridebuddy
+export DATABASE_USERNAME=ridebuddy
+export DATABASE_PASSWORD=ridebuddy
+export JWT_SECRET='replace-with-a-secret-at-least-32-characters-long'
+mvn spring-boot:run
+```
+
+The API runs on `http://localhost:8080`; health is available at `/actuator/health` and Swagger UI at `/swagger-ui/index.html`.
+
+Run the backend tests with:
+
+```bash
+cd backend-spring
+mvn verify
+```
+
+For a local PostgreSQL environment:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Docker verification requires Docker Desktop or another Docker-compatible runtime. No credentials are committed; use environment variables to override the local defaults.
+
+### Migration status
+
+Implemented in Spring: authentication, user identity, ride CRUD/search, transactional booking seat allocation, and travel-intent matching. The existing mobile app still defaults to the Node compatibility API (`EXPO_PUBLIC_API_URL`) until the remaining endpoint parity work is complete. See `docs/API.md` and `docs/NODE_TO_SPRING_MIGRATION.md`.
