@@ -816,3 +816,10 @@ Before finalizing:
 
 **Status**: Ready for Phase 2 execution  
 **Last Updated**: September 9, 2024
+# Current implementation checkpoint (2026-09-10)
+
+The Spring migration has an executable core and focused unit/context tests.
+Next verification work is operational rather than speculative: run the
+PostgreSQL/Flyway Compose stack when Docker is available, exercise the
+Postman collection against that runtime, and test the Expo flows against the
+running `/api/v1` service. Node remains the fallback until those checks pass.

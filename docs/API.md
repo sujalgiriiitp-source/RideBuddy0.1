@@ -14,6 +14,11 @@ The new backend is versioned under `/api/v1`. The existing Node.js API remains a
 
 `POST /api/v1/auth/forgot-password` and `POST /api/v1/auth/reset-password` provide single-use password reset tokens. `POST /api/v1/auth/verify-email?token=...` consumes an email verification token. Configure SMTP and `MAIL_ENABLED=true` for delivery.
 
+`POST /api/v1/auth/resend-verification` accepts `{ "email": "..." }` and
+returns the same non-disclosing message whether or not the account exists.
+Unknown password-reset emails are handled the same way to avoid account
+enumeration.
+
 ## Users
 
 `GET /api/v1/users/me` returns the authenticated user's profile.
@@ -54,6 +59,15 @@ Search supports `source`, `destination`, `from`, `to`, `page`, `size`, and `sort
 | GET | `/api/v1/chat/conversations` | Yes | List conversations for the user |
 | GET | `/api/v1/chat/messages/{conversationId}` | Yes | List authorized conversation messages |
 | POST | `/api/v1/chat/messages` | Yes | Send a persisted text message |
+
+## Compatibility aliases
+
+The Spring API also exposes `/api/v1/auth/signup`, `/api/v1/users/profile`,
+`/api/v1/bookings/my-bookings`, `/api/v1/bookings/ride/{rideId}/mine`, and
+`/api/v1/bookings/{rideId}/cancel` for existing Expo call sites. Spring
+responses are direct DTOs; `mobile/src/api.js` wraps those responses in the
+legacy `{ success, data }` shape. The Node service remains available under
+`/api` for features listed in `FEATURE_PARITY.md`.
 
 Validation errors use HTTP 400 and a consistent `ErrorResponse`. Missing or invalid tokens return HTTP 401/403 through Spring Security.
 

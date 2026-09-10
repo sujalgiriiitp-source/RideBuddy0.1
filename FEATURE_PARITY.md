@@ -2,6 +2,10 @@
 
 Compared against `server/src/routes`, `server/src/controllers`, `server/src/models`, and the Expo calls under `mobile/src`.
 
+> Status reviewed 2026-09-10. Spring is an additive `/api/v1` backend; Node `/api`
+> remains the compatibility fallback. Items below are marked only for code that
+> exists and has been inspected, not for unverified runtime claims.
+
 ## Implemented
 
 - [Implemented] Registration and login with BCrypt, signed JWT access tokens, role claims, and protected Spring endpoints.
@@ -18,7 +22,7 @@ Compared against `server/src/routes`, `server/src/controllers`, `server/src/mode
 
 ## Partially Implemented
 
-- [Partially Implemented] Mobile integration: the Expo client still defaults to the Node compatibility API. Spring endpoints are documented and independently runnable, but the client response envelope and endpoint aliases still need an end-to-end cutover.
+- [Partially Implemented] Mobile integration: the shared Expo client supports Spring direct DTOs, auth aliases, refresh-token persistence, booking aliases, and profile aliases. The app still defaults to Node and has not been exercised screen-by-screen against a live Spring/PostgreSQL deployment.
 - [Implemented] Authentication lifecycle: BCrypt access tokens, 30-day rotating refresh tokens, refresh-token revocation on logout, and one-time account-token persistence are implemented.
 - [Partially Implemented] Chat: persisted HTTP conversations/messages are implemented; Socket.io-compatible real-time transport and read receipts are not.
 - [Partially Implemented] Notifications: persisted in-app notifications are implemented; FCM/Expo push-token registration and delivery are not.
@@ -32,7 +36,7 @@ Compared against `server/src/routes`, `server/src/controllers`, `server/src/mode
 - [Missing] Subscription tiers and subscription middleware.
 - [Missing] Socket.io ride tracking.
 - [Missing] Expo/FCM push-token registration and delivery.
-- [Partially Implemented] Password reset and email verification tokens are persisted, single-use, and SMTP-deliverable when `MAIL_ENABLED=true`; resend-verification and a configured production SMTP deployment remain.
+- [Partially Implemented] Password reset and email verification tokens are persisted, single-use, and SMTP-deliverable when `MAIL_ENABLED=true`; the resend endpoint exists, but configured SMTP delivery has not been runtime-verified.
 - [Partially Implemented] Expo response-envelope compatibility is normalized in the shared client and auth/booking aliases are available; complete mobile cutover still requires deploying Spring and exercising every screen against it.
 
 These features remain in the existing Node service and have not been deleted. The migration is not complete until each retained feature has a verified Spring contract and the mobile client has been switched deliberately.

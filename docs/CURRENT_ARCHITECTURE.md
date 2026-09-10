@@ -1,5 +1,23 @@
 # RideBuddy Current Architecture Assessment
 
+> Reviewed 2026-09-10. The original Node/Expo assessment below is retained as
+> migration context. The current repository also contains an additive Spring
+> Boot/PostgreSQL backend; see `FEATURE_PARITY.md` for the verified boundary.
+
+## Current Spring migration snapshot
+
+The Spring service is Java 17-compatible and uses Spring Boot 3.3.5, Spring
+Security/JWT, JPA, PostgreSQL, Flyway, Bean Validation, Actuator, OpenAPI,
+Spring Mail, and Maven. It exposes `/api/v1` and currently implements
+identity/profile flows, rides, bookings, travel-intent matching, ratings,
+in-app notifications, and persisted HTTP conversations/messages.
+
+The Node service remains the default Expo compatibility backend under `/api`.
+Socket.io chat/ride tracking, FCM/Expo push delivery, Mapbox, image uploads,
+and subscriptions remain intentionally on Node. PostgreSQL runtime, Docker
+Compose, and screen-by-screen Expo verification require an environment with
+Docker and a running Spring deployment; they are not claimed here.
+
 **Date**: September 2024  
 **Current State**: Node.js + Express + MongoDB  
 **Target State**: Java + Spring Boot + PostgreSQL (additive, not replacement)

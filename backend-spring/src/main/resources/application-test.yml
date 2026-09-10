@@ -8,3 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+ridebuddy:
+  jwt:
+    secret: test-secret-that-is-at-least-32-characters
+    expiration-ms: 900000

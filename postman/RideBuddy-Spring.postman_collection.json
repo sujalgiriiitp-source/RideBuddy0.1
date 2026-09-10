@@ -6,8 +6,10 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
     { "key": "token", "value": "" },
+    { "key": "refreshToken", "value": "" },
     { "key": "rideId", "value": "" },
-    { "key": "intentId", "value": "" }
+    { "key": "intentId", "value": "" },
+    { "key": "conversationId", "value": "" }
   ],
   "item": [
     {
@@ -29,6 +31,24 @@
       }
     },
     {
+      "name": "Refresh token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refreshToken}}\"}" },
+        "url": "{{baseUrl}}/auth/refresh"
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"refreshToken\":\"{{refreshToken}}\"}" },
+        "url": "{{baseUrl}}/auth/logout"
+      }
+    },
+    {
       "name": "List rides",
       "request": { "method": "GET", "url": "{{baseUrl}}/rides?page=0&size=20&sort=departureTime,asc" }
     },
@@ -40,6 +60,23 @@
         "body": { "mode": "raw", "raw": "{\"source\":\"Campus\",\"destination\":\"Airport\",\"departureTime\":\"2030-01-01T10:00:00Z\",\"price\":100,\"seats\":3}" },
         "url": "{{baseUrl}}/rides"
       }
+    },
+    {
+      "name": "Create booking",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"rideId\":\"{{rideId}}\",\"seats\":1}" },
+        "url": "{{baseUrl}}/bookings"
+      }
+    },
+    {
+      "name": "My bookings",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/bookings/my-bookings" }
+    },
+    {
+      "name": "Cancel booking",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/bookings/{{rideId}}/cancel" }
     },
     {
       "name": "Create intent",
@@ -57,6 +94,36 @@
     {
       "name": "Current user",
       "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/users/me" }
+    },
+    {
+      "name": "Update profile",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\":\"Asha Updated\",\"phone\":\"+911234567890\"}" },
+        "url": "{{baseUrl}}/users/me"
+      }
+    },
+    {
+      "name": "List notifications",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/notifications" }
+    },
+    {
+      "name": "List conversations",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/chat/conversations" }
+    },
+    {
+      "name": "List messages",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/chat/messages/{{conversationId}}" }
+    },
+    {
+      "name": "Validation negative case",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\":\"\",\"email\":\"not-an-email\",\"password\":\"short\"}" },
+        "url": "{{baseUrl}}/auth/register"
+      }
     },
     {
       "name": "Health",
