@@ -13,7 +13,8 @@ public class AuthController {
  @PostMapping("/refresh") public AuthResponse refresh(@Valid @RequestBody RefreshRequest r){var rotation=tokens.rotate(r.refreshToken());return new AuthResponse(tokens.access(rotation.user()),rotation.refreshToken(),users.response(rotation.user()));}
  @PostMapping("/logout") public TokenMessage logout(@Valid @RequestBody RefreshRequest r){tokens.revoke(r.refreshToken());return new TokenMessage("Logged out");}
  @PostMapping("/verify-email") public TokenMessage verify(@RequestParam String token){users.verify(tokens.consumeAccount(token,"EMAIL_VERIFICATION"));return new TokenMessage("Email verified");}
- @PostMapping("/forgot-password") public TokenMessage forgot(@Valid @RequestBody ForgotPasswordRequest r){var user=users.findByEmail(r.email());tokens.issueAndSendAccount(user,"PASSWORD_RESET");return new TokenMessage("If the account exists, reset instructions will be sent");}
+ @PostMapping("/resend-verification") public TokenMessage resend(@Valid @RequestBody ForgotPasswordRequest r){users.findByEmail(r.email()).filter(u -> !u.isEmailVerified()).ifPresent(u -> tokens.issueAndSendAccount(u,"EMAIL_VERIFICATION"));return new TokenMessage("If the account exists, verification instructions will be sent");}
+ @PostMapping("/forgot-password") public TokenMessage forgot(@Valid @RequestBody ForgotPasswordRequest r){users.findByEmail(r.email()).ifPresent(u -> tokens.issueAndSendAccount(u,"PASSWORD_RESET"));return new TokenMessage("If the account exists, reset instructions will be sent");}
  @PostMapping("/reset-password") public TokenMessage reset(@Valid @RequestBody ResetPasswordRequest r){var user=tokens.consumeAccount(r.token(),"PASSWORD_RESET");users.updatePassword(user,r.password());return new TokenMessage("Password reset");}
  private AuthResponse auth(com.ridebuddy.entity.User u){return new AuthResponse(tokens.access(u),tokens.issueRefresh(u),users.response(u));}
 }

@@ -255,6 +255,15 @@ All API responses follow:
 - For mobile production builds, use EAS Build and set `EXPO_PUBLIC_API_URL` to deployed backend URL
 # RideBuddy0.1
 
+## Migration status (reviewed 2026-09-10)
+
+The repository contains two intentionally preserved backends. The existing
+Node.js/Express/MongoDB service remains the Expo application's default
+compatibility API. The additive Spring Boot service is runnable under
+`backend-spring` and covers the verified core identity, profile, rides,
+bookings, travel-intent matching, ratings, in-app notifications, and persisted
+HTTP chat slices. This is not a claim that the migration is complete.
+
 ## Spring Boot migration backend
 
 The existing Node.js/Express backend and Expo mobile application remain in place. A versioned Java backend is now available under `backend-spring/` for progressive migration:
@@ -286,11 +295,11 @@ The API runs on `http://localhost:8080`; health is available at `/actuator/healt
 
 To use the Spring API from Expo, set `EXPO_PUBLIC_API_URL=http://localhost:8080/api/v1` in the mobile environment. The shared mobile client normalizes Spring's direct DTO responses into the existing `{ success, data }` shape.
 
-Run the backend tests with:
+Run the backend tests and package verification with:
 
 ```bash
 cd backend-spring
-mvn verify
+mvn clean verify
 ```
 
 For a local PostgreSQL environment:
@@ -299,8 +308,24 @@ For a local PostgreSQL environment:
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-Docker verification requires Docker Desktop or another Docker-compatible runtime. No credentials are committed; use environment variables to override the local defaults.
+Docker verification requires Docker Desktop or another Docker-compatible runtime.
+The Compose stack waits for PostgreSQL health before starting Spring and
+persists data in the `ridebuddy-postgres` volume. Credentials are required
+through environment variables:
+
+```bash
+DATABASE_PASSWORD='change-me' JWT_SECRET='use-a-long-random-secret' \
+  docker compose -f docker/docker-compose.yml up --build
+```
 
 ### Migration status
 
-Implemented in Spring: authentication, user identity, ride CRUD/search, transactional booking seat allocation, and travel-intent matching. The existing mobile app still defaults to the Node compatibility API (`EXPO_PUBLIC_API_URL`) until the remaining endpoint parity work is complete. See `docs/API.md` and `docs/NODE_TO_SPRING_MIGRATION.md`.
+Implemented in Spring: authentication, rotating refresh-token revocation,
+single-use account tokens, user identity/profile updates, ride CRUD/search,
+transactional booking seat allocation, travel-intent matching, ratings,
+in-app notifications, and persisted HTTP conversations/messages. Remaining
+Node boundaries include Socket.io real-time chat/tracking, FCM/Expo push
+delivery, Mapbox, image uploads, and subscriptions. The existing mobile app
+still defaults to Node until live Spring API and Expo flow verification is
+completed. See `FEATURE_PARITY.md`, `docs/API.md`, and
+`docs/NODE_TO_SPRING_MIGRATION.md`.

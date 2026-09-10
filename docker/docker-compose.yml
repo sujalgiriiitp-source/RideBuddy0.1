@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ridebuddy
       POSTGRES_USER: ridebuddy
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ridebuddy}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
     ports:
       - "5432:5432"
     healthcheck:
@@ -20,8 +20,8 @@ services:
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/ridebuddy
       DATABASE_USERNAME: ridebuddy
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-ridebuddy}
-      JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me-123456789}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8081}
     ports:
       - "8080:8080"
